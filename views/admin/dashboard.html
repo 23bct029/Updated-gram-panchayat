@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Digital Gram Panchayat Services Portal</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <img src="/images/logo.svg" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏛️%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="header-title">
+                    <h1>Digital Gram Panchayat</h1>
+                    <p>Admin Portal</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-profile" onclick="showLogoutModal()" style="cursor: pointer;" title="Logout">
+                    <div class="user-avatar">AD</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" onclick="showSection('dashboard', this)"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+                <li><a href="#" onclick="showSection('services', this)"><i class="fas fa-cogs"></i><span>Services</span></a></li>
+                <li><a href="#" onclick="showSection('users', this)"><i class="fas fa-users"></i><span>Users</span></a></li>
+                <li><a href="#" onclick="showSection('staff', this)"><i class="fas fa-user-tie"></i><span>Staff</span></a></li>
+                <li><a href="#" onclick="showSection('schemes', this)"><i class="fas fa-clipboard-list"></i><span>Schemes</span></a></li>
+                <li><a href="#" onclick="showLogoutModal(); return false;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+                    <!-- Logout Confirmation Modal -->
+                    <div id="logoutModal" class="modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+                        <div class="modal-content" style="background:#fff; margin:10% auto; padding:20px; border-radius:8px; width:90%; max-width:400px; box-shadow:0 2px 8px rgba(0,0,0,0.2); text-align:center;">
+                            <h3 style="margin-bottom:20px;">Are you willing to logout?</h3>
+                            <div style="display:flex; justify-content:space-between; gap:10px;">
+                                <button onclick="hideLogoutModal()" class="btn btn-secondary" style="flex:1; background:#6b7280; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
+                                <button onclick="confirmLogout()" class="btn btn-danger" style="flex:1; background:#ef4444; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:600;">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="dashboardSection">
+                <div class="welcome-section">
+                    <h2>Admin Dashboard</h2>
+                    <p>Manage system configuration and monitor activities</p>
+                </div>
+
+                <div class="action-cards">
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-users"></i></div>
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Citizens</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-file-alt"></i></div>
+                        <h3 id="totalApplications">0</h3>
+                        <p>Total Applications</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-user-tie"></i></div>
+                        <h3 id="totalStaff">0</h3>
+                        <p>Staff Members</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-cogs"></i></div>
+                        <h3 id="totalServices">0</h3>
+                        <p>Active Services</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Quick Actions</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <button onclick="showSection('services', this)" class="btn btn-primary">Manage Services</button>
+                        <button onclick="showSection('users', this)" class="btn btn-primary">Manage Users</button>
+                        <button onclick="showSection('staff', this)" class="btn btn-primary">Manage Staff</button>
+                        <button onclick="showSection('schemes', this)" class="btn btn-primary">Manage Schemes</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="servicesSection" style="display: none;">
+                <div class="section-header">
+                    <h3>Manage Services</h3>
+                    <button class="btn btn-primary" onclick="showAddServiceModal()">Add New Service</button>
+                </div>
+                <div id="servicesContent"></div>
+            </div>
+
+            <div id="usersSection" style="display: none;">
+                <div class="section-header">
+                    <h3>Manage Citizens</h3>
+                </div>
+                <div id="usersContent"></div>
+            </div>
+
+            <div id="staffSection" style="display: none;">
+                <div class="section-header">
+                    <h3>Manage Staff</h3>
+                    <button class="btn btn-primary" onclick="showAddStaffModal()">Add New Staff</button>
+                </div>
+                <div id="staffContent"></div>
+            </div>
+
+            <div id="schemesSection" style="display: none;">
+                <div class="section-header">
+                    <h3>Manage Schemes</h3>
+                    <button class="btn btn-primary" onclick="showAddSchemeModal()">Add New Scheme</button>
+                </div>
+                <div id="schemesContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div class="modal" id="addServiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Service</h3>
+                <span class="close-modal" onclick="closeModal('addServiceModal')">&times;</span>
+            </div>
+            <form id="addServiceForm">
+                <div class="form-group">
+                    <label for="serviceName">Service Name *</label>
+                    <input type="text" id="serviceName" required placeholder="e.g., Birth Certificate">
+                </div>
+                <div class="form-group">
+                    <label for="serviceType">Service Type *</label>
+                    <select id="serviceType" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="certificate">Certificate</option>
+                        <option value="license">License</option>
+                        <option value="permit">Permit</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="serviceDescription">Description</label>
+                    <textarea id="serviceDescription" rows="3" placeholder="Service description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="requiredDocuments">Required Documents</label>
+                    <textarea id="requiredDocuments" rows="3" placeholder="e.g., Aadhar Card, Address Proof"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="processingTime">Processing Time</label>
+                    <input type="text" id="processingTime" placeholder="e.g., 5-7 days">
+                </div>
+                <div class="form-group">
+                    <label for="serviceFee">Fee (₹) *</label>
+                    <input type="number" id="serviceFee" required min="0" placeholder="e.g., 100">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Service</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Staff Modal -->
+    <div class="modal" id="addStaffModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Staff Member</h3>
+                <span class="close-modal" onclick="closeModal('addStaffModal')">&times;</span>
+            </div>
+            <form id="addStaffForm">
+                <div class="form-group">
+                    <label for="staffName">Full Name *</label>
+                    <input type="text" id="staffName" required placeholder="e.g., Ravi Kumar">
+                </div>
+                <div class="form-group">
+                    <label for="staffEmail">Email *</label>
+                    <input type="email" id="staffEmail" required placeholder="e.g., ravi@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="staffPhone">Phone *</label>
+                    <input type="tel" id="staffPhone" required placeholder="e.g., 9876543210">
+                </div>
+                <div class="form-group">
+                    <label for="staffPassword">Password *</label>
+                    <input type="password" id="staffPassword" required minlength="6" placeholder="Minimum 6 characters">
+                </div>
+                <div class="form-group">
+                    <label for="staffRole">Role *</label>
+                    <select id="staffRole" required>
+                        <option value="">-- Select Role --</option>
+                        <option value="Clerk">Clerk</option>
+                        <option value="Secretary">Secretary</option>
+                        <option value="Revenue Officer">Revenue Officer</option>
+                        <option value="Village Administrative Officer">Village Administrative Officer</option>
+                        <option value="Panchayat Assistant">Panchayat Assistant</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="staffEmployeeId">Employee ID *</label>
+                    <input type="text" id="staffEmployeeId" required placeholder="e.g., EMP002">
+                </div>
+                <div class="form-group">
+                    <label for="staffDepartment">Department</label>
+                    <input type="text" id="staffDepartment" placeholder="e.g., Revenue Department">
+                </div>
+                <div class="form-group">
+                    <label for="staffPanchayat">Panchayat Name</label>
+                    <input type="text" id="staffPanchayat" placeholder="e.g., Sample Village Panchayat">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Staff Member</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Scheme Modal -->
+    <div class="modal" id="addSchemeModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Add New Scheme</h3>
+                <span class="close-modal" onclick="closeModal('addSchemeModal')">&times;</span>
+            </div>
+            <form id="addSchemeForm">
+                <div class="form-group">
+                    <label for="schemeName">Scheme Name *</label>
+                    <input type="text" id="schemeName" required placeholder="e.g., PM-KISAN">
+                </div>
+                <div class="form-group">
+                    <label for="schemeType">Scheme Type *</label>
+                    <select id="schemeType" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Employment">Employment</option>
+                        <option value="Welfare">Welfare</option>
+                        <option value="Education">Education</option>
+                        <option value="Health">Health</option>
+                        <option value="Housing">Housing</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="schemeDescription">Description *</label>
+                    <textarea id="schemeDescription" rows="3" required placeholder="Scheme description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eligibilityCriteria">Eligibility Criteria</label>
+                    <textarea id="eligibilityCriteria" rows="2" placeholder="Who can apply"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="schemeBenefits">Benefits *</label>
+                    <textarea id="schemeBenefits" rows="2" required placeholder="What benefits are provided"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="applicationProcess">Application Process</label>
+                    <textarea id="applicationProcess" rows="2" placeholder="How to apply"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="schemeDocuments">Required Documents</label>
+                    <textarea id="schemeDocuments" rows="2" placeholder="e.g., Aadhar Card, Income Certificate"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="schemeLink">Website Link (Optional)</label>
+                    <input type="url" id="schemeLink" placeholder="https://example.com">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add Scheme</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Use relative URL for API calls (works in both dev and production)
+        const API_URL = window.location.origin + '/api';
+        let authToken = localStorage.getItem('authToken');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!authToken || localStorage.getItem('userType') !== 'admin') {
+                window.location.href = '/login';
+            }
+            loadDashboard();
+        });
+
+        // Robust fetch with retry for Render cold starts (can take 30-60s)
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    console.warn(`Attempt ${i + 1} failed (${response.status}), retrying...`);
+                } catch (e) {
+                    console.warn(`Attempt ${i + 1} network error, retrying...`);
+                }
+                await new Promise(r => setTimeout(r, (i + 1) * 5000));
+            }
+            return null;
+        }
+
+        async function loadDashboard() {
+            try {
+                const response = await fetchWithRetry(`${API_URL}/admin/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (!response) return;
+                const data = await response.json();
+                if (data.success) {
+                    const stats = data.statistics;
+                    document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                    document.getElementById('totalApplications').textContent = stats.totalApplications || 0;
+                    document.getElementById('totalStaff').textContent = stats.totalStaff || 0;
+                    document.getElementById('totalServices').textContent = stats.totalServices || 0;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function showSection(section, element) {
+            document.querySelectorAll('[id$="Section"]').forEach(s => s.style.display = 'none');
+            const sectionElement = document.getElementById(section + 'Section');
+            if (sectionElement) {
+                sectionElement.style.display = 'block';
+            }
+            
+            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+            if (element) {
+                const anchor = element.closest('a');
+                if (anchor) {
+                    anchor.classList.add('active');
+                }
+            }
+
+            if (section === 'services') loadServices();
+            if (section === 'users') loadUsers();
+            if (section === 'staff') loadStaff();
+            if (section === 'schemes') loadSchemes();
+        }
+
+        async function loadServices() {
+            try {
+                const response = await fetch(`${API_URL}/admin/services`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('servicesContent').innerHTML = `
+                        <table class="applications-table">
+                            <thead>
+                                <tr><th>Service Name</th><th>Type</th><th>Fee</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                ${data.services.map(s => `
+                                    <tr>
+                                        <td>${s.service_name}</td>
+                                        <td>${s.service_type}</td>
+                                        <td>₹${s.fee}</td>
+                                        <td><span class="status-badge ${s.is_active ? 'status-approved' : 'status-rejected'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+                                        <td style="display: flex; gap: 5px;">
+                                            ${s.is_active ? `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="deactivateService(${s.service_id})">Deactivate</button>` : ''}
+                                            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="deleteService(${s.service_id})">Delete</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('usersContent').innerHTML = `
+                        <table class="applications-table">
+                            <thead>
+                                <tr><th>Name</th><th>Email</th><th>Phone</th><th>Village</th><th>District</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                ${data.users.map(u => `
+                                    <tr>
+                                        <td>${u.full_name}</td>
+                                        <td>${u.email}</td>
+                                        <td>${u.phone}</td>
+                                        <td>${u.village || ''}</td>
+                                        <td>${u.district || ''}</td>
+                                        <td><span class="status-badge ${u.is_active ? 'status-approved' : 'status-rejected'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+                                        <td><button class="btn btn-primary" onclick="toggleUserStatus(${u.user_id})">Toggle</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function showAddServiceModal() {
+            document.getElementById('addServiceModal').classList.add('active');
+        }
+
+        function showAddStaffModal() {
+            document.getElementById('addStaffModal').classList.add('active');
+        }
+
+        function showAddSchemeModal() {
+            document.getElementById('addSchemeModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Add Service Form Handler
+        document.getElementById('addServiceForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const serviceData = {
+                service_name: document.getElementById('serviceName').value,
+                service_type: document.getElementById('serviceType').value,
+                description: document.getElementById('serviceDescription').value,
+                required_documents: document.getElementById('requiredDocuments').value,
+                processing_time: document.getElementById('processingTime').value,
+                fee: parseFloat(document.getElementById('serviceFee').value)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/admin/services`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(serviceData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    closeModal('addServiceModal');
+                    document.getElementById('addServiceForm').reset();
+                    loadServices();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        });
+
+        // Add Staff Form Handler
+        document.getElementById('addStaffForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const staffData = {
+                full_name: document.getElementById('staffName').value,
+                email: document.getElementById('staffEmail').value,
+                phone: document.getElementById('staffPhone').value,
+                password: document.getElementById('staffPassword').value,
+                role: document.getElementById('staffRole').value,
+                employee_id: document.getElementById('staffEmployeeId').value,
+                department: document.getElementById('staffDepartment').value,
+                panchayat_name: document.getElementById('staffPanchayat').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/admin/staff`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(staffData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    closeModal('addStaffModal');
+                    document.getElementById('addStaffForm').reset();
+                    loadStaff();
+                    loadDashboard();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        });
+
+        // Add Scheme Form Handler
+        document.getElementById('addSchemeForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const schemeData = {
+                scheme_name: document.getElementById('schemeName').value,
+                scheme_type: document.getElementById('schemeType').value,
+                description: document.getElementById('schemeDescription').value,
+                eligibility_criteria: document.getElementById('eligibilityCriteria').value,
+                benefits: document.getElementById('schemeBenefits').value,
+                application_process: document.getElementById('applicationProcess').value,
+                required_documents: document.getElementById('schemeDocuments').value,
+                link: document.getElementById('schemeLink').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/admin/schemes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(schemeData)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    closeModal('addSchemeModal');
+                    document.getElementById('addSchemeForm').reset();
+                    loadSchemes();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        });
+
+        async function loadStaff() {
+            try {
+                const response = await fetch(`${API_URL}/admin/staff`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('staffContent').innerHTML = `
+                        <table class="applications-table">
+                            <thead>
+                                <tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Department</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                ${data.staff.map(s => `
+                                    <tr>
+                                        <td>${s.full_name}</td>
+                                        <td>${s.email}</td>
+                                        <td>${s.phone}</td>
+                                        <td>${s.role}</td>
+                                        <td>${s.department || 'N/A'}</td>
+                                        <td><span class="status-badge ${s.is_active ? 'status-approved' : 'status-rejected'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+                                        <td><button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="toggleStaffStatus(${s.staff_id})">Toggle</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function toggleStaffStatus(staffId) {
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/staff/${staffId}/toggle-status`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    loadStaff();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        }
+
+        async function loadSchemes() {
+            try {
+                const response = await fetch(`${API_URL}/admin/schemes`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('schemesContent').innerHTML = `
+                        <table class="applications-table">
+                            <thead>
+                                <tr><th>Scheme Name</th><th>Type</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                ${data.schemes.map(s => `
+                                    <tr>
+                                        <td>${s.scheme_name}</td>
+                                        <td>${s.scheme_type}</td>
+                                        <td><span class="status-badge ${s.is_active ? 'status-approved' : 'status-rejected'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+                                        <td style="display: flex; gap: 5px;">
+                                            ${s.is_active ? `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="deactivateScheme(${s.scheme_id})">Deactivate</button>` : ''}
+                                            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="deleteScheme(${s.scheme_id})">Delete</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deactivateService(serviceId) {
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/services/${serviceId}/deactivate`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    loadServices();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        }
+
+        async function deleteService(serviceId) {
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/services/${serviceId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    loadServices();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        }
+
+        async function deactivateScheme(schemeId) {
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/schemes/${schemeId}/deactivate`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    loadSchemes();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        }
+
+        async function deleteScheme(schemeId) {
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/schemes/${schemeId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    loadSchemes();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        }
+
+        async function toggleUserStatus(userId) {
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/toggle-status`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Action completed');
+                    loadUsers();
+                } else {
+                    console.log('Action completed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                console.log('Action completed');
+            }
+        }
+
+        function showLogoutModal() {
+            document.getElementById('logoutModal').style.display = 'block';
+        }
+
+        function hideLogoutModal() {
+            document.getElementById('logoutModal').style.display = 'none';
+        }
+
+        function confirmLogout() {
+            localStorage.clear();
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
