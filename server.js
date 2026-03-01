@@ -22,7 +22,7 @@ if (!process.env.SESSION_SECRET) {
 
 // Initialize Express app
 const app = express();
-const PORT = 8001;
+const PORT = process.env.PORT || 8001;
 
 // CORS Configuration
 const corsOptions = {
@@ -310,7 +310,7 @@ app.use((req, res) => {
 
 // Start server - Initialize database first
 initializeDatabase().then(() => {
-    app.listen(PORT, '0.0.0.0',() => {
+    app.listen(PORT, () => {
         console.log('===========================================');
         console.log('Digital Gram Panchayat Services Portal');
         console.log('===========================================');
