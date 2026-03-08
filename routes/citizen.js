@@ -1,220 +1,139 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database/db');
-const { authenticateToken, requireRole } = require('../middleware/auth');
+const { verifyToken, isCitizen } = require('../middleware/auth');
 const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 
-// Multer setup for document uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'public/uploads/'),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
 const upload = multer({ storage });
 
-// Middleware: all citizen routes require auth + citizen role
-router.use(authenticateToken);
-router.use(requireRole('citizen'));
+router.use(verifyToken);
+router.use(isCitizen);
 
-// ─────────────────────────────────────────────
-// EXISTING: Dashboard
-// ─────────────────────────────────────────────
 router.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../views/citizen/dashboard.html'));
 });
 
-// ─────────────────────────────────────────────
-// EXISTING: My Applications
-// ─────────────────────────────────────────────
 router.get('/applications', (req, res) => {
+  const db = req.app.locals.db;
   db.all(
-    `SELECT a.*, s.name AS service_name 
-     FROM applications a 
-     JOIN services s ON a.service_id = s.id 
-     WHERE a.citizen_id = ? 
+    `SELECT a.application_id AS id, a.status, a.created_at, a.updated_at,
+            a.remarks AS staff_remarks, a.application_data,
+            s.service_name, s.service_type
+     FROM applications a
+     JOIN services s ON a.service_id = s.service_id
+     WHERE a.user_id = ?
      ORDER BY a.created_at DESC`,
-    [req.user.id],
+    [req.userId],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows);
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
     }
   );
 });
 
 router.post('/applications', upload.array('documents', 5), (req, res) => {
+  const db = req.app.locals.db;
   const { service_id, purpose, details } = req.body;
-  const citizen_id = req.user.id;
   db.run(
-    `INSERT INTO applications (citizen_id, service_id, purpose, details, status, created_at) VALUES (?,?,?,?,'pending', datetime('now'))`,
-    [citizen_id, service_id, purpose, details],
+    `INSERT INTO applications (user_id, service_id, application_data, status, created_at)
+     VALUES (?, ?, ?, 'pending', datetime('now'))`,
+    [req.userId, service_id, JSON.stringify({ purpose, details })],
     function(err) {
-      if (err) return res.status(500).json({ error: 'Failed to submit application' });
+      if (err) return res.status(500).json({ error: err.message });
       const appId = this.lastID;
-      // Insert timeline event
       db.run(
-        `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
-        [citizen_id, 'application_submitted', 'Application Submitted', `New application submitted for service #${service_id}`, appId]
+        `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at)
+         VALUES (?, 'application_submitted', 'Application Submitted', ?, ?, datetime('now'))`,
+        [req.userId, `Application submitted for service #${service_id}`, appId]
       );
       res.json({ success: true, application_id: appId });
     }
   );
 });
 
-// ─────────────────────────────────────────────
-// EXISTING: Certificates (with QR & Hash - Feature 3 & 4)
-// ─────────────────────────────────────────────
-router.get('/certificates', (req, res) => {
+router.get('/services', (req, res) => {
+  const db = req.app.locals.db;
   db.all(
-    `SELECT c.*, s.name AS service_name, a.purpose 
-     FROM certificates c
-     JOIN applications a ON c.application_id = a.id
-     JOIN services s ON a.service_id = s.id
-     WHERE a.citizen_id = ?
-     ORDER BY c.issued_at DESC`,
-    [req.user.id],
+    `SELECT service_id AS id, service_name AS name, service_type,
+            description, required_documents, processing_time, fee
+     FROM services WHERE is_active = 1 ORDER BY service_name`,
+    [],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      // Ensure each certificate has a hash
-      rows.forEach(cert => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
+router.get('/certificates', (req, res) => {
+  const db = req.app.locals.db;
+  db.all(
+    `SELECT c.certificate_id AS id, c.certificate_number, c.issue_date AS issued_at,
+            c.expiry_date, c.is_valid, c.verification_hash,
+            s.service_name, a.application_data
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.application_id
+     JOIN services s ON c.service_id = s.service_id
+     WHERE c.user_id = ?
+     ORDER BY c.created_at DESC`,
+    [req.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const result = rows || [];
+      result.forEach(cert => {
+        try { const d = JSON.parse(cert.application_data||'{}'); cert.purpose = d.purpose||''; } catch(e) { cert.purpose=''; }
         if (!cert.verification_hash) {
           const hash = crypto.createHash('sha256')
-            .update(`${cert.id}-${cert.application_id}-${cert.issued_at}-${process.env.JWT_SECRET || 'secret'}`)
+            .update(`${cert.id}-${cert.certificate_number}-${process.env.JWT_SECRET||'secret'}`)
             .digest('hex');
-          db.run(`UPDATE certificates SET verification_hash = ? WHERE id = ?`, [hash, cert.id]);
+          db.run(`UPDATE certificates SET verification_hash = ? WHERE certificate_id = ?`, [hash, cert.id]);
           cert.verification_hash = hash;
         }
       });
-      res.json(rows);
+      res.json(result);
     }
   );
 });
 
-// Feature 3 & 4: Verify certificate by ID (citizen-facing)
-router.get('/certificates/:id/verify', (req, res) => {
-  db.get(
-    `SELECT c.*, s.name AS service_name, u.name AS citizen_name, a.purpose
-     FROM certificates c
-     JOIN applications a ON c.application_id = a.id
-     JOIN services s ON a.service_id = s.id
-     JOIN users u ON a.citizen_id = u.id
-     WHERE c.id = ? AND a.citizen_id = ?`,
-    [req.params.id, req.user.id],
-    (err, cert) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      if (!cert) return res.status(404).json({ error: 'Certificate not found' });
-      // Log verification attempt
-      db.run(
-        `INSERT INTO certificate_verification_logs (certificate_id, verified_by, verification_method, created_at) VALUES (?,?,?,datetime('now'))`,
-        [cert.id, req.user.id, 'citizen_view']
-      );
-      res.json({ valid: true, certificate: cert });
-    }
-  );
-});
-
-// ─────────────────────────────────────────────
-// FEATURE 1: Smart Application Correction System
-// ─────────────────────────────────────────────
-
-// GET: List correction requests for this citizen
-router.get('/corrections', (req, res) => {
-  db.all(
-    `SELECT ac.*, a.id AS application_id, s.name AS service_name, 
-            ac.correction_reason, ac.required_documents, ac.status,
-            ac.created_at, ac.resubmitted_at
-     FROM application_corrections ac
-     JOIN applications a ON ac.application_id = a.id
-     JOIN services s ON a.service_id = s.id
-     WHERE a.citizen_id = ?
-     ORDER BY ac.created_at DESC`,
-    [req.user.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows);
-    }
-  );
-});
-
-// POST: Citizen resubmits corrected application
-router.post('/corrections/:id/resubmit', upload.array('documents', 5), (req, res) => {
-  const { correction_notes } = req.body;
-  const correctionId = req.params.id;
-
-  db.get(
-    `SELECT ac.*, a.citizen_id FROM application_corrections ac JOIN applications a ON ac.application_id = a.id WHERE ac.id = ?`,
-    [correctionId],
-    (err, correction) => {
-      if (err || !correction) return res.status(404).json({ error: 'Correction not found' });
-      if (correction.citizen_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
-
-      db.run(
-        `UPDATE application_corrections SET status = 'resubmitted', correction_notes = ?, resubmitted_at = datetime('now') WHERE id = ?`,
-        [correction_notes, correctionId],
-        (err2) => {
-          if (err2) return res.status(500).json({ error: 'Failed to resubmit' });
-          // Reset application status to pending
-          db.run(`UPDATE applications SET status = 'pending', updated_at = datetime('now') WHERE id = ?`, [correction.application_id]);
-          // Timeline event
-          db.run(
-            `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
-            [req.user.id, 'correction_resubmitted', 'Correction Resubmitted', 'You resubmitted a corrected application', correction.application_id]
-          );
-          res.json({ success: true, message: 'Application resubmitted successfully' });
-        }
-      );
-    }
-  );
-});
-
-// ─────────────────────────────────────────────
-// FEATURE 2: Certificate Renewal System
-// ─────────────────────────────────────────────
-
-// GET: List certificates eligible for renewal (expiring within 30 days or already expired)
 router.get('/certificates/renewable', (req, res) => {
+  const db = req.app.locals.db;
   db.all(
-    `SELECT c.*, s.name AS service_name, a.purpose,
-            CASE WHEN c.expiry_date < date('now') THEN 'expired'
-                 WHEN c.expiry_date < date('now', '+30 days') THEN 'expiring_soon'
-                 ELSE 'valid' END AS expiry_status
+    `SELECT c.certificate_id AS id, c.certificate_number, c.issue_date AS issued_at,
+            c.expiry_date, s.service_name,
+            CASE WHEN c.expiry_date < date('now') THEN 'expired' ELSE 'expiring_soon' END AS expiry_status
      FROM certificates c
-     JOIN applications a ON c.application_id = a.id
-     JOIN services s ON a.service_id = s.id
-     WHERE a.citizen_id = ?
-       AND (c.expiry_date IS NOT NULL)
-       AND (c.expiry_date < date('now', '+30 days'))
-       AND NOT EXISTS (
-         SELECT 1 FROM applications ar 
-         WHERE ar.parent_certificate_id = c.id AND ar.status NOT IN ('rejected')
-       )
+     JOIN applications a ON c.application_id = a.application_id
+     JOIN services s ON c.service_id = s.service_id
+     WHERE c.user_id = ? AND c.expiry_date IS NOT NULL AND c.expiry_date < date('now','+30 days')
      ORDER BY c.expiry_date ASC`,
-    [req.user.id],
+    [req.userId],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows);
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
     }
   );
 });
 
-// POST: Submit renewal application
 router.post('/certificates/:id/renew', (req, res) => {
+  const db = req.app.locals.db;
   db.get(
-    `SELECT c.*, a.service_id, a.purpose, a.citizen_id FROM certificates c JOIN applications a ON c.application_id = a.id WHERE c.id = ?`,
-    [req.params.id],
+    `SELECT c.*, a.service_id FROM certificates c
+     JOIN applications a ON c.application_id = a.application_id
+     WHERE c.certificate_id = ? AND c.user_id = ?`,
+    [req.params.id, req.userId],
     (err, cert) => {
       if (err || !cert) return res.status(404).json({ error: 'Certificate not found' });
-      if (cert.citizen_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
-
       db.run(
-        `INSERT INTO applications (citizen_id, service_id, purpose, details, status, parent_certificate_id, created_at) VALUES (?,?,?,?,'pending',?,datetime('now'))`,
-        [req.user.id, cert.service_id, `Renewal: ${cert.purpose || 'Certificate Renewal'}`, 'Certificate renewal request', cert.id],
+        `INSERT INTO applications (user_id, service_id, application_data, status, parent_certificate_id, created_at)
+         VALUES (?, ?, ?, 'pending', ?, datetime('now'))`,
+        [req.userId, cert.service_id, JSON.stringify({ purpose: 'Certificate Renewal' }), cert.certificate_id],
         function(err2) {
-          if (err2) return res.status(500).json({ error: 'Failed to create renewal application' });
-          db.run(
-            `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
-            [req.user.id, 'renewal_applied', 'Renewal Application Submitted', `Renewal requested for certificate #${cert.id}`, this.lastID]
-          );
+          if (err2) return res.status(500).json({ error: err2.message });
           res.json({ success: true, application_id: this.lastID });
         }
       );
@@ -222,128 +141,109 @@ router.post('/certificates/:id/renew', (req, res) => {
   );
 });
 
-// ─────────────────────────────────────────────
-// FEATURE 5: Multi-Certificate Requests
-// ─────────────────────────────────────────────
-
-// GET: List multi-application requests
-router.get('/multi-application', (req, res) => {
+router.get('/corrections', (req, res) => {
+  const db = req.app.locals.db;
   db.all(
-    `SELECT mar.*, 
-            (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id) AS total_sub,
-            (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id AND status = 'approved') AS approved_sub,
-            (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id AND status = 'pending') AS pending_sub
-     FROM multi_application_requests mar
-     WHERE mar.citizen_id = ?
-     ORDER BY mar.created_at DESC`,
-    [req.user.id],
+    `SELECT ac.*, s.service_name
+     FROM application_corrections ac
+     JOIN applications a ON ac.application_id = a.application_id
+     JOIN services s ON a.service_id = s.service_id
+     WHERE a.user_id = ? ORDER BY ac.created_at DESC`,
+    [req.userId],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows);
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
     }
   );
 });
 
-// GET: Single multi-application detail with sub-applications
-router.get('/multi-application/:id', (req, res) => {
+router.post('/corrections/:id/resubmit', upload.array('documents', 5), (req, res) => {
+  const db = req.app.locals.db;
+  const { correction_notes } = req.body;
   db.get(
-    `SELECT * FROM multi_application_requests WHERE id = ? AND citizen_id = ?`,
-    [req.params.id, req.user.id],
-    (err, mar) => {
-      if (err || !mar) return res.status(404).json({ error: 'Not found' });
-      db.all(
-        `SELECT a.*, s.name AS service_name FROM applications a JOIN services s ON a.service_id = s.id WHERE a.multi_request_id = ?`,
-        [mar.id],
-        (err2, subApps) => {
-          if (err2) return res.status(500).json({ error: 'Database error' });
-          res.json({ ...mar, sub_applications: subApps });
+    `SELECT ac.*, a.user_id FROM application_corrections ac
+     JOIN applications a ON ac.application_id = a.application_id WHERE ac.id = ?`,
+    [req.params.id],
+    (err, correction) => {
+      if (err || !correction) return res.status(404).json({ error: 'Not found' });
+      if (correction.user_id !== req.userId) return res.status(403).json({ error: 'Forbidden' });
+      db.run(
+        `UPDATE application_corrections SET status='resubmitted', correction_notes=?, resubmitted_at=datetime('now') WHERE id=?`,
+        [correction_notes, req.params.id],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          db.run(`UPDATE applications SET status='pending', updated_at=datetime('now') WHERE application_id=?`, [correction.application_id]);
+          res.json({ success: true });
         }
       );
     }
   );
 });
 
-// POST: Submit a multi-certificate application
-router.post('/multi-application', upload.array('documents', 10), (req, res) => {
+router.get('/multi-application', (req, res) => {
+  const db = req.app.locals.db;
+  db.all(
+    `SELECT mar.*,
+      (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id) AS total_sub,
+      (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id AND status='approved') AS approved_sub,
+      (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id AND status='pending') AS pending_sub
+     FROM multi_application_requests mar WHERE mar.citizen_id = ? ORDER BY mar.created_at DESC`,
+    [req.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
+router.post('/multi-application', (req, res) => {
+  const db = req.app.locals.db;
   const { purpose, service_ids } = req.body;
-  const citizen_id = req.user.id;
-
   let serviceIds;
-  try {
-    serviceIds = typeof service_ids === 'string' ? JSON.parse(service_ids) : service_ids;
-  } catch (e) {
-    return res.status(400).json({ error: 'Invalid service_ids format' });
-  }
-
-  if (!serviceIds || serviceIds.length < 2) {
-    return res.status(400).json({ error: 'Select at least 2 services' });
-  }
-
+  try { serviceIds = typeof service_ids === 'string' ? JSON.parse(service_ids) : service_ids; }
+  catch (e) { return res.status(400).json({ error: 'Invalid service_ids' }); }
+  if (!serviceIds || serviceIds.length < 2) return res.status(400).json({ error: 'Select at least 2 services' });
   db.run(
     `INSERT INTO multi_application_requests (citizen_id, purpose, total_services, status, created_at) VALUES (?,?,?,'pending',datetime('now'))`,
-    [citizen_id, purpose, serviceIds.length],
+    [req.userId, purpose, serviceIds.length],
     function(err) {
-      if (err) return res.status(500).json({ error: 'Failed to create multi-application' });
+      if (err) return res.status(500).json({ error: err.message });
       const multiId = this.lastID;
-
       let inserted = 0;
       serviceIds.forEach(sid => {
         db.run(
-          `INSERT INTO applications (citizen_id, service_id, purpose, status, multi_request_id, created_at) VALUES (?,?,?,'pending',?,datetime('now'))`,
-          [citizen_id, sid, purpose, multiId],
-          () => {
-            inserted++;
-            if (inserted === serviceIds.length) {
-              db.run(
-                `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
-                [citizen_id, 'multi_application_submitted', 'Multi-Application Submitted', `Applied for ${serviceIds.length} certificates: ${purpose}`, multiId]
-              );
-              res.json({ success: true, multi_request_id: multiId });
-            }
-          }
+          `INSERT INTO applications (user_id, service_id, application_data, status, multi_request_id, created_at) VALUES (?,?,?,'pending',?,datetime('now'))`,
+          [req.userId, sid, JSON.stringify({ purpose }), multiId],
+          () => { if (++inserted === serviceIds.length) res.json({ success: true, multi_request_id: multiId }); }
         );
       });
     }
   );
 });
 
-// ─────────────────────────────────────────────
-// FEATURE 6: Citizen Service Timeline
-// ─────────────────────────────────────────────
-router.get('/timeline', (req, res) => {
-  db.all(
-    `SELECT cte.*, 
-            CASE cte.event_type
-              WHEN 'application_submitted' THEN 'submitted'
-              WHEN 'application_approved' THEN 'approved'
-              WHEN 'application_rejected' THEN 'rejected'
-              WHEN 'certificate_issued' THEN 'certificate'
-              WHEN 'correction_requested' THEN 'correction'
-              WHEN 'correction_resubmitted' THEN 'resubmitted'
-              WHEN 'renewal_applied' THEN 'renewal'
-              WHEN 'multi_application_submitted' THEN 'multi'
-              ELSE 'info'
-            END AS event_category
-     FROM citizen_timeline_events cte
-     WHERE cte.citizen_id = ?
-     ORDER BY cte.created_at DESC
-     LIMIT 100`,
-    [req.user.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: 'Database error' });
-      res.json(rows);
+router.get('/multi-application/:id', (req, res) => {
+  const db = req.app.locals.db;
+  db.get(`SELECT * FROM multi_application_requests WHERE id=? AND citizen_id=?`, [req.params.id, req.userId],
+    (err, mar) => {
+      if (err || !mar) return res.status(404).json({ error: 'Not found' });
+      db.all(
+        `SELECT a.application_id AS id, a.status, s.service_name FROM applications a
+         JOIN services s ON a.service_id = s.service_id WHERE a.multi_request_id=?`,
+        [mar.id], (err2, subApps) => res.json({ ...mar, sub_applications: subApps || [] })
+      );
     }
   );
 });
 
-// ─────────────────────────────────────────────
-// EXISTING: Services list
-// ─────────────────────────────────────────────
-router.get('/services', (req, res) => {
-  db.all(`SELECT * FROM services WHERE is_active = 1 ORDER BY name`, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    res.json(rows);
-  });
+router.get('/timeline', (req, res) => {
+  const db = req.app.locals.db;
+  db.all(`SELECT * FROM citizen_timeline_events WHERE citizen_id=? ORDER BY created_at DESC LIMIT 100`,
+    [req.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
 });
 
 module.exports = router;

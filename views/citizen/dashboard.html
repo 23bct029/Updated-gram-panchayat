@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Citizen Dashboard – Gram Panchayat</title>
+  <title>Staff Dashboard – Gram Panchayat</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:system-ui,-apple-system,sans-serif;background:#f1f5f9;color:#1e293b;display:flex;min-height:100vh}
-    /* SIDEBAR */
     .sidebar{width:260px;background:#1e293b;min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100}
     .sidebar-header{padding:24px 20px;border-bottom:1px solid #334155}
     .sidebar-header h2{color:#fff;font-size:1.1rem;font-weight:700}
@@ -21,21 +19,18 @@
     .sidebar nav li a i{width:18px;text-align:center}
     .sidebar-footer{padding:16px 20px;border-top:1px solid #334155}
     .sidebar-footer a{color:#ef4444;text-decoration:none;display:flex;align-items:center;gap:8px;font-size:.9rem}
-    /* MAIN */
     .main{margin-left:260px;flex:1;padding:24px}
     .section{display:none}
     .section.active{display:block}
     .page-header{margin-bottom:24px}
-    .page-header h1{font-size:1.6rem;font-weight:700;color:#1e293b}
+    .page-header h1{font-size:1.6rem;font-weight:700}
     .page-header p{color:#64748b;margin-top:4px}
-    /* CARDS */
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
     .stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:4px solid #2563eb}
     .stat-card .stat-value{font-size:2rem;font-weight:700;color:#2563eb}
     .stat-card .stat-label{font-size:.85rem;color:#64748b;margin-top:4px}
-    /* TABLES */
     .card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;margin-bottom:24px}
-    .card-header{padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+    .card-header{padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
     .card-header h3{font-size:1rem;font-weight:600}
     .applications-table{width:100%;border-collapse:collapse}
     .applications-table th,.applications-table td{padding:12px 16px;text-align:left;font-size:.875rem;border-bottom:1px solid #f1f5f9}
@@ -46,84 +41,57 @@
     .badge-approved{background:#d1fae5;color:#065f46}
     .badge-rejected{background:#fee2e2;color:#991b1b}
     .badge-correction{background:#e0e7ff;color:#3730a3}
-    .badge-resubmitted{background:#dbeafe;color:#1d4ed8}
-    .badge-expired{background:#f3f4f6;color:#6b7280}
-    /* BUTTONS */
-    .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.875rem;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
+    .badge-high{background:#fee2e2;color:#991b1b}
+    .badge-medium{background:#fef3c7;color:#92400e}
+    .badge-low{background:#d1fae5;color:#065f46}
+    .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.875rem;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all .2s;text-decoration:none}
     .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
     .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
     .btn-warning{background:#f59e0b;color:#fff}.btn-warning:hover{background:#d97706}
     .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
     .btn-outline{background:#fff;border:1px solid #e2e8f0;color:#475569}.btn-outline:hover{background:#f8fafc}
     .btn-sm{padding:5px 10px;font-size:.8rem}
-    /* MODAL */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
     .modal-overlay.open{display:flex}
     .modal{background:#fff;border-radius:16px;padding:28px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto}
     .modal h3{font-size:1.2rem;font-weight:700;margin-bottom:16px}
     .form-group{margin-bottom:16px}
     .form-group label{display:block;font-size:.875rem;font-weight:500;margin-bottom:6px;color:#374151}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.875rem;outline:none;transition:border .2s}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.875rem;outline:none}
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#2563eb}
     .form-group textarea{resize:vertical;min-height:80px}
     .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-    /* TIMELINE */
-    .timeline{padding:8px 0}
-    .timeline-item{display:flex;gap:16px;padding:12px 0;border-left:2px solid #e2e8f0;margin-left:12px;padding-left:20px;position:relative}
-    .timeline-item::before{content:'';width:12px;height:12px;border-radius:50%;background:#2563eb;position:absolute;left:-7px;top:16px}
-    .timeline-item.approved::before{background:#10b981}
-    .timeline-item.rejected::before{background:#ef4444}
-    .timeline-item.certificate::before{background:#8b5cf6}
-    .timeline-item.correction::before{background:#f59e0b}
-    .timeline-item.renewal::before{background:#06b6d4}
-    .timeline-item.multi::before{background:#ec4899}
-    .timeline-content h4{font-size:.9rem;font-weight:600}
-    .timeline-content p{font-size:.8rem;color:#64748b;margin-top:2px}
-    .timeline-content .time{font-size:.75rem;color:#94a3b8;margin-top:4px}
-    /* CERTIFICATE QR */
-    .cert-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
-    .cert-info h4{font-size:1rem;font-weight:600;margin-bottom:4px}
-    .cert-info p{font-size:.85rem;color:#64748b}
-    .cert-qr{text-align:center}
-    .cert-qr canvas,.cert-qr img{border:4px solid #f1f5f9;border-radius:8px}
-    .cert-qr p{font-size:.7rem;color:#94a3b8;margin-top:4px}
-    /* MULTI APP */
-    .service-checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px}
-    .service-checkbox-item{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:.2s}
-    .service-checkbox-item:hover{border-color:#2563eb;background:#eff6ff}
-    .service-checkbox-item input[type="checkbox"]{width:16px;height:16px;accent-color:#2563eb}
-    /* ALERT */
-    .alert{padding:12px 16px;border-radius:8px;font-size:.875rem;margin-bottom:16px}
-    .alert-info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-    .alert-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
-    .alert-warning{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
-    /* LOADING */
     .loading{text-align:center;padding:40px;color:#94a3b8}
     .loading i{font-size:2rem;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-    /* EMPTY */
     .empty-state{text-align:center;padding:48px 24px;color:#94a3b8}
     .empty-state i{font-size:3rem;margin-bottom:12px}
-    .empty-state p{font-size:.95rem}
+    /* Queue card */
+    .queue-highlight{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:12px;padding:20px;margin-bottom:20px}
+    .queue-highlight h3{color:#1d4ed8;margin-bottom:4px}
+    .queue-highlight p{color:#3b82f6;font-size:.85rem}
+    /* Workload bars */
+    .workload-bar-wrap{margin-top:4px}
+    .workload-bar{height:8px;border-radius:4px;background:#e2e8f0;overflow:hidden}
+    .workload-bar-fill{height:100%;border-radius:4px;background:#2563eb;transition:width .5s}
+    .staff-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f5f9}
+    .staff-avatar{width:40px;height:40px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>🏛️ Gram Panchayat</h2>
-    <p id="user-greeting">Citizen Portal</p>
+    <p>Staff Portal</p>
   </div>
   <nav>
     <ul>
-      <li><a href="#" class="active" onclick="showSection('home')"><i class="fas fa-home"></i> Home</a></li>
-      <li><a href="#" onclick="showSection('applications')"><i class="fas fa-file-alt"></i> My Applications</a></li>
-      <li><a href="#" onclick="showSection('certificates')"><i class="fas fa-scroll"></i> My Certificates</a></li>
-      <li><a href="#" onclick="showSection('corrections')"><i class="fas fa-edit"></i> Corrections</a></li>
-      <li><a href="#" onclick="showSection('renewals')"><i class="fas fa-sync-alt"></i> Renewals</a></li>
-      <li><a href="#" onclick="showSection('multi-application')"><i class="fas fa-layer-group"></i> Multi-Application</a></li>
-      <li><a href="#" onclick="showSection('timeline')"><i class="fas fa-stream"></i> My Timeline</a></li>
+      <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</a></li>
+      <li><a href="#" onclick="showSection('pending')"><i class="fas fa-list-alt"></i> Pending Applications</a></li>
+      <li><a href="#" onclick="showSection('verify')"><i class="fas fa-check-double"></i> Verify Documents</a></li>
+      <li><a href="#" onclick="showSection('staff-corrections')"><i class="fas fa-edit"></i> Correction Requests</a></li>
+      <li><a href="#" onclick="showSection('my-workload')"><i class="fas fa-tasks"></i> My Workload</a></li>
     </ul>
   </nav>
   <div class="sidebar-footer">
@@ -131,473 +99,338 @@
   </div>
 </aside>
 
-<!-- MAIN CONTENT -->
 <main class="main">
 
-  <!-- HOME -->
-  <section id="home" class="section active">
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="section active">
     <div class="page-header">
-      <h1>Welcome back, <span id="citizen-name">Citizen</span> 👋</h1>
-      <p>Here's an overview of your services and applications.</p>
+      <h1>Staff Dashboard</h1>
+      <p>Welcome back, <span id="staff-name">Staff</span></p>
     </div>
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value" id="stat-total">–</div><div class="stat-label">Total Applications</div></div>
-      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b" id="stat-pending">–</div><div class="stat-label">Pending</div></div>
-      <div class="stat-card" style="border-color:#10b981"><div class="stat-value" style="color:#10b981" id="stat-approved">–</div><div class="stat-label">Approved</div></div>
-      <div class="stat-card" style="border-color:#8b5cf6"><div class="stat-value" style="color:#8b5cf6" id="stat-certs">–</div><div class="stat-label">Certificates</div></div>
+      <div class="stat-card"><div class="stat-value" id="s-pending">–</div><div class="stat-label">Pending Applications</div></div>
+      <div class="stat-card" style="border-color:#10b981"><div class="stat-value" style="color:#10b981" id="s-approved">–</div><div class="stat-label">Approved Today</div></div>
+      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b" id="s-corrections">–</div><div class="stat-label">Pending Corrections</div></div>
+    </div>
+
+    <!-- Feature 9: Queue widget on dashboard -->
+    <div class="queue-highlight">
+      <h3><i class="fas fa-inbox"></i> Application Queue</h3>
+      <p>Pick the next application from the fair queue</p>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="getNextInQueue()"><i class="fas fa-forward"></i> Get Next in Queue</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Recent Applications</h3></div>
+      <div id="dash-recent"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    </div>
+  </section>
+
+  <!-- PENDING APPLICATIONS (Feature 9: priority queue) -->
+  <section id="pending" class="section">
+    <div class="page-header">
+      <h1>Pending Applications</h1>
+      <p>Applications sorted by waiting time (oldest first)</p>
     </div>
     <div class="card">
-      <div class="card-header"><h3>Recent Applications</h3><button class="btn btn-primary btn-sm" onclick="openNewAppModal()"><i class="fas fa-plus"></i> New Application</button></div>
-      <div id="home-recent-apps"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+      <div class="card-header">
+        <h3>Queue</h3>
+        <button class="btn btn-outline btn-sm" onclick="loadPendingApps()"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div id="pending-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
     </div>
   </section>
 
-  <!-- MY APPLICATIONS -->
-  <section id="applications" class="section">
+  <!-- VERIFY DOCUMENTS (Feature 1: correction button added) -->
+  <section id="verify" class="section">
     <div class="page-header">
-      <h1>My Applications</h1>
-      <p>Track all your service applications</p>
+      <h1>Verify Documents</h1>
+      <p>Review application details and take action</p>
     </div>
-    <div class="card">
-      <div class="card-header"><h3>All Applications</h3><button class="btn btn-primary btn-sm" onclick="openNewAppModal()"><i class="fas fa-plus"></i> New Application</button></div>
-      <div id="applications-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    <div id="verify-content">
+      <div class="empty-state"><i class="fas fa-search"></i><p>Select an application from Pending Applications to verify.</p></div>
     </div>
   </section>
 
-  <!-- CERTIFICATES (Feature 3 & 4: QR merged here) -->
-  <section id="certificates" class="section">
-    <div class="page-header">
-      <h1>My Certificates</h1>
-      <p>View, download, and verify your issued certificates</p>
-    </div>
-    <div id="certificates-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
-  </section>
-
-  <!-- FEATURE 1: CORRECTIONS -->
-  <section id="corrections" class="section">
+  <!-- FEATURE 1: CORRECTION REQUESTS (Staff side) -->
+  <section id="staff-corrections" class="section">
     <div class="page-header">
       <h1>Correction Requests</h1>
-      <p>Staff have requested corrections on these applications. Review and resubmit.</p>
+      <p>Citizen resubmissions awaiting your review</p>
     </div>
     <div class="card">
-      <div class="card-header"><h3>Pending Corrections</h3></div>
-      <div id="corrections-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+      <div class="card-header"><h3>Resubmitted Applications</h3><button class="btn btn-outline btn-sm" onclick="loadStaffCorrections()"><i class="fas fa-sync"></i> Refresh</button></div>
+      <div id="staff-corrections-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
     </div>
   </section>
 
-  <!-- FEATURE 2: RENEWALS -->
-  <section id="renewals" class="section">
+  <!-- FEATURE 10: MY WORKLOAD -->
+  <section id="my-workload" class="section">
     <div class="page-header">
-      <h1>Certificate Renewals</h1>
-      <p>Certificates expiring soon or already expired. Renew them with one click.</p>
+      <h1>My Workload</h1>
+      <p>Your performance and assignment statistics</p>
     </div>
-    <div id="renewals-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
-  </section>
-
-  <!-- FEATURE 5: MULTI-APPLICATION -->
-  <section id="multi-application" class="section">
-    <div class="page-header">
-      <h1>Multi-Certificate Application</h1>
-      <p>Apply for multiple certificates in a single request (e.g., for scholarship purposes).</p>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3>My Multi-Applications</h3><button class="btn btn-primary btn-sm" onclick="openMultiAppModal()"><i class="fas fa-plus"></i> New Multi-Application</button></div>
-      <div id="multi-app-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
-    </div>
-  </section>
-
-  <!-- FEATURE 6: TIMELINE -->
-  <section id="timeline" class="section">
-    <div class="page-header">
-      <h1>My Service Timeline</h1>
-      <p>A chronological record of all your interactions with Gram Panchayat services.</p>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3>Activity History</h3></div>
-      <div style="padding:20px" id="timeline-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
-    </div>
+    <div id="workload-content"><div class="loading"><i class="fas fa-spinner"></i></div></div>
   </section>
 
 </main>
 
-<!-- ======================== MODALS ======================== -->
-
-<!-- New Application Modal -->
-<div class="modal-overlay" id="new-app-modal">
+<!-- APPROVE MODAL -->
+<div class="modal-overlay" id="approve-modal">
   <div class="modal">
-    <h3><i class="fas fa-file-alt" style="color:#2563eb"></i> New Application</h3>
-    <div class="form-group"><label>Select Service</label><select id="app-service-id"><option value="">Loading services...</option></select></div>
-    <div class="form-group"><label>Purpose</label><input type="text" id="app-purpose" placeholder="e.g. Scholarship, Bank Loan, etc." /></div>
-    <div class="form-group"><label>Additional Details</label><textarea id="app-details" placeholder="Any additional information..."></textarea></div>
-    <div class="form-group"><label>Upload Documents</label><input type="file" id="app-docs" multiple accept=".pdf,.jpg,.jpeg,.png"/></div>
+    <h3><i class="fas fa-check-circle" style="color:#10b981"></i> Approve Application</h3>
+    <input type="hidden" id="approve-app-id"/>
+    <div class="form-group"><label>Remarks (optional)</label><textarea id="approve-remarks" placeholder="Enter any remarks for the citizen..."></textarea></div>
     <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeModal('new-app-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitApplication()"><i class="fas fa-paper-plane"></i> Submit</button>
+      <button class="btn btn-outline" onclick="closeModal('approve-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="approveApplication()"><i class="fas fa-check"></i> Approve & Issue Certificate</button>
     </div>
   </div>
 </div>
 
-<!-- Resubmit Correction Modal -->
-<div class="modal-overlay" id="resubmit-modal">
+<!-- REJECT MODAL -->
+<div class="modal-overlay" id="reject-modal">
   <div class="modal">
-    <h3><i class="fas fa-redo" style="color:#2563eb"></i> Resubmit Corrected Application</h3>
-    <input type="hidden" id="correction-id"/>
-    <div class="alert alert-warning" id="correction-reason-display"></div>
-    <div class="form-group"><label>Your Correction Notes</label><textarea id="correction-notes" placeholder="Describe what you corrected..."></textarea></div>
-    <div class="form-group"><label>Upload Corrected Documents</label><input type="file" id="correction-docs" multiple accept=".pdf,.jpg,.jpeg,.png"/></div>
+    <h3><i class="fas fa-times-circle" style="color:#ef4444"></i> Reject Application</h3>
+    <input type="hidden" id="reject-app-id"/>
+    <div class="form-group"><label>Rejection Reason <span style="color:red">*</span></label><textarea id="reject-remarks" placeholder="Please provide a clear reason..."></textarea></div>
     <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeModal('resubmit-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitCorrection()"><i class="fas fa-paper-plane"></i> Resubmit</button>
+      <button class="btn btn-outline" onclick="closeModal('reject-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="rejectApplication()"><i class="fas fa-times"></i> Reject</button>
     </div>
   </div>
 </div>
 
-<!-- Multi-Application Modal -->
-<div class="modal-overlay" id="multi-app-modal">
+<!-- CORRECTION REQUEST MODAL (Feature 1) -->
+<div class="modal-overlay" id="correction-modal">
   <div class="modal">
-    <h3><i class="fas fa-layer-group" style="color:#2563eb"></i> New Multi-Certificate Application</h3>
-    <div class="form-group"><label>Purpose (e.g. Scholarship, Government Scheme)</label><input type="text" id="multi-purpose" placeholder="Enter common purpose for all certificates"/></div>
-    <div class="form-group">
-      <label>Select Certificates (choose at least 2)</label>
-      <div class="service-checkbox-grid" id="multi-service-grid"></div>
-    </div>
+    <h3><i class="fas fa-edit" style="color:#f59e0b"></i> Request Correction</h3>
+    <input type="hidden" id="correction-app-id"/>
+    <div class="form-group"><label>Correction Reason <span style="color:red">*</span></label><textarea id="correction-reason" placeholder="What needs to be corrected?"></textarea></div>
+    <div class="form-group"><label>Required Documents</label><input type="text" id="correction-docs-required" placeholder="e.g. Income proof, Updated address proof"/></div>
     <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeModal('multi-app-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitMultiApp()"><i class="fas fa-paper-plane"></i> Submit All</button>
+      <button class="btn btn-outline" onclick="closeModal('correction-modal')">Cancel</button>
+      <button class="btn btn-warning" onclick="submitCorrectionRequest()"><i class="fas fa-paper-plane"></i> Send Request</button>
     </div>
   </div>
 </div>
 
 <script>
-// ── Auth helpers ──────────────────────────────
 const token = localStorage.getItem('token');
-if (!token) { window.location.href = '/'; }
+if (!token) window.location.href = '/';
 
-function authHeaders() {
-  return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
-}
-
+function authHeaders() { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, { headers: authHeaders(), ...opts });
   if (res.status === 401) { logout(); return null; }
   return res.json();
 }
+function logout() { localStorage.removeItem('token'); window.location.href = '/'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
 
-function logout() {
-  localStorage.removeItem('token');
-  window.location.href = '/';
-}
-
-// ── Navigation ────────────────────────────────
 function showSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
   document.getElementById(name).classList.add('active');
   event.currentTarget.classList.add('active');
-
   const loaders = {
-    'applications': loadApplications,
-    'certificates': loadCertificates,
-    'corrections': loadCorrections,
-    'renewals': loadRenewals,
-    'multi-application': loadMultiApps,
-    'timeline': loadTimeline,
+    pending: loadPendingApps,
+    'staff-corrections': loadStaffCorrections,
+    'my-workload': loadMyWorkload,
   };
   if (loaders[name]) loaders[name]();
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-
-// ── Init ──────────────────────────────────────
 window.onload = async () => {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    document.getElementById('citizen-name').textContent = payload.name || 'Citizen';
-    document.getElementById('user-greeting').textContent = payload.name || 'Citizen';
+    const p = JSON.parse(atob(token.split('.')[1]));
+    document.getElementById('staff-name').textContent = p.name || 'Staff';
   } catch(e) {}
-  loadHomeStats();
-  loadServices();
+  loadDashboard();
 };
 
-// ── HOME STATS ────────────────────────────────
-async function loadHomeStats() {
-  const apps = await apiFetch('/api/citizen/applications');
-  const certs = await apiFetch('/api/citizen/certificates');
-  if (!apps) return;
-  document.getElementById('stat-total').textContent = apps.length;
-  document.getElementById('stat-pending').textContent = apps.filter(a => a.status === 'pending').length;
-  document.getElementById('stat-approved').textContent = apps.filter(a => a.status === 'approved').length;
-  document.getElementById('stat-certs').textContent = (certs || []).length;
+async function loadDashboard() {
+  const [pending, corrections] = await Promise.all([
+    apiFetch('/api/staff/applications/pending'),
+    apiFetch('/api/staff/corrections/pending')
+  ]);
+  document.getElementById('s-pending').textContent = (pending || []).length;
+  document.getElementById('s-corrections').textContent = (corrections || []).length;
+  // Count approved today from pending list - use all apps for approved today
+  const all = await apiFetch('/api/staff/applications?status=approved');
+  const today = new Date().toDateString();
+  const approvedToday = (all || []).filter(a => new Date(a.updated_at).toDateString() === today).length;
+  document.getElementById('s-approved').textContent = approvedToday;
 
-  const recent = apps.slice(0, 5);
-  document.getElementById('home-recent-apps').innerHTML = recent.length ? `
-    <table class="applications-table">
-      <thead><tr><th>Service</th><th>Purpose</th><th>Date</th><th>Status</th></tr></thead>
-      <tbody>${recent.map(a => `
-        <tr>
-          <td>${a.service_name || '–'}</td>
-          <td>${a.purpose || '–'}</td>
-          <td>${formatDate(a.created_at)}</td>
-          <td>${statusBadge(a.status)}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>` : '<div class="empty-state"><i class="fas fa-inbox"></i><p>No applications yet.</p></div>';
+  // Recent
+  const recent = (pending || []).slice(0, 5);
+  document.getElementById('dash-recent').innerHTML = recent.length ? buildAppTable(recent, false) :
+    '<div class="empty-state"><i class="fas fa-inbox"></i><p>No pending applications.</p></div>';
 }
 
-// ── APPLICATIONS ──────────────────────────────
-async function loadApplications() {
-  const apps = await apiFetch('/api/citizen/applications');
-  const el = document.getElementById('applications-list');
-  if (!apps || apps.length === 0) { el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No applications yet. Start a new one!</p></div>'; return; }
-  el.innerHTML = `
-    <table class="applications-table">
-      <thead><tr><th>Service</th><th>Purpose</th><th>Submitted</th><th>Status</th><th>Remarks</th></tr></thead>
-      <tbody>${apps.map(a => `
-        <tr>
-          <td>${a.service_name}</td>
-          <td>${a.purpose || '–'}</td>
-          <td>${formatDate(a.created_at)}</td>
-          <td>${statusBadge(a.status)}</td>
-          <td><small>${a.staff_remarks || '–'}</small></td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
+// ── PENDING (Feature 9: Queue) ─────────────────
+async function loadPendingApps() {
+  const apps = await apiFetch('/api/staff/applications/pending');
+  const el = document.getElementById('pending-list');
+  if (!apps || apps.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:#10b981;font-size:2.5rem"></i><p style="margin-top:12px">No pending applications!</p></div>';
+    return;
+  }
+  el.innerHTML = buildAppTable(apps, true);
 }
 
-// ── CERTIFICATES (with QR) ────────────────────
-async function loadCertificates() {
-  const certs = await apiFetch('/api/citizen/certificates');
-  const el = document.getElementById('certificates-list');
-  if (!certs || certs.length === 0) { el.innerHTML = '<div class="empty-state"><i class="fas fa-scroll"></i><p>No certificates issued yet.</p></div>'; return; }
+function buildAppTable(apps, showActions) {
+  return `<table class="applications-table">
+    <thead><tr>
+      <th>Priority</th><th>Citizen</th><th>Service</th><th>Waiting</th><th>Submitted</th>
+      ${showActions ? '<th>Actions</th>' : ''}
+    </tr></thead>
+    <tbody>${apps.map(a => `
+      <tr>
+        <td><span class="badge badge-${a.priority||'low'}">${(a.priority||'low').toUpperCase()}</span></td>
+        <td>${a.citizen_name}</td>
+        <td>${a.service_name}</td>
+        <td>${a.waiting_days || 0} days</td>
+        <td>${formatDate(a.created_at)}</td>
+        ${showActions ? `<td><button class="btn btn-outline btn-sm" onclick="openVerify(${a.id})"><i class="fas fa-eye"></i> Review</button></td>` : ''}
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
 
-  el.innerHTML = certs.map((c, i) => `
-    <div class="cert-card">
-      <div class="cert-info">
-        <h4>${c.service_name}</h4>
-        <p><strong>Purpose:</strong> ${c.purpose || '–'}</p>
-        <p><strong>Issued:</strong> ${formatDate(c.issued_at)}</p>
-        <p><strong>Expires:</strong> ${c.expiry_date ? formatDate(c.expiry_date) : 'N/A'}</p>
-        <p><strong>Hash:</strong> <code style="font-size:.7rem;word-break:break-all">${(c.verification_hash || '').substring(0,24)}…</code></p>
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <a href="/verify/${c.verification_hash}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-shield-alt"></i> Verify</a>
-          <button class="btn btn-outline btn-sm" onclick="downloadCert(${c.id})"><i class="fas fa-download"></i> Download</button>
+// ── VERIFY (Feature 1: correction button) ─────
+async function openVerify(appId) {
+  showSectionById('verify');
+  const app = await apiFetch(`/api/staff/applications/${appId}`);
+  if (!app) return;
+  document.getElementById('verify-content').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h3>Application #${app.id} – ${app.service_name}</h3>
+        <span class="badge badge-${app.status}">${app.status}</span>
+      </div>
+      <div style="padding:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <div><strong>Citizen:</strong> ${app.citizen_name}</div>
+          <div><strong>Email:</strong> ${app.email}</div>
+          <div><strong>Phone:</strong> ${app.phone || '–'}</div>
+          <div><strong>Address:</strong> ${app.address || '–'}</div>
+          <div><strong>Purpose:</strong> ${app.purpose || '–'}</div>
+          <div><strong>Submitted:</strong> ${formatDate(app.created_at)}</div>
+        </div>
+        <p><strong>Details:</strong> ${app.details || '–'}</p>
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+          <button class="btn btn-success" onclick="openApproveModal(${app.id})"><i class="fas fa-check"></i> Approve</button>
+          <button class="btn btn-warning" onclick="openCorrectionModal(${app.id})"><i class="fas fa-edit"></i> Request Correction</button>
+          <button class="btn btn-danger" onclick="openRejectModal(${app.id})"><i class="fas fa-times"></i> Reject</button>
+          <button class="btn btn-outline" onclick="showSectionById('pending')"><i class="fas fa-arrow-left"></i> Back</button>
         </div>
       </div>
-      <div class="cert-qr">
-        <div id="qr-${c.id}"></div>
-        <p>Scan to verify</p>
-      </div>
-    </div>
-  `).join('');
+    </div>`;
+}
 
-  // Generate QR codes
-  certs.forEach(c => {
-    if (c.verification_hash) {
-      try {
-        new QRCode(document.getElementById('qr-' + c.id), {
-          text: window.location.origin + '/verify/' + c.verification_hash,
-          width: 100, height: 100
-        });
-      } catch(e) {}
-    }
+function showSectionById(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+}
+
+function openApproveModal(id) { document.getElementById('approve-app-id').value = id; openModal('approve-modal'); }
+function openRejectModal(id) { document.getElementById('reject-app-id').value = id; openModal('reject-modal'); }
+function openCorrectionModal(id) { document.getElementById('correction-app-id').value = id; openModal('correction-modal'); }
+
+async function approveApplication() {
+  const id = document.getElementById('approve-app-id').value;
+  const remarks = document.getElementById('approve-remarks').value;
+  const data = await apiFetch(`/api/staff/applications/${id}/approve`, { method: 'POST', body: JSON.stringify({ remarks }) });
+  if (data && data.success) { closeModal('approve-modal'); alert('Application approved! Certificate issued.'); loadDashboard(); showSectionById('pending'); loadPendingApps(); }
+  else alert(data?.error || 'Failed');
+}
+
+async function rejectApplication() {
+  const id = document.getElementById('reject-app-id').value;
+  const remarks = document.getElementById('reject-remarks').value;
+  if (!remarks.trim()) { alert('Please enter a rejection reason'); return; }
+  const data = await apiFetch(`/api/staff/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ remarks }) });
+  if (data && data.success) { closeModal('reject-modal'); alert('Application rejected.'); showSectionById('pending'); loadPendingApps(); }
+  else alert(data?.error || 'Failed');
+}
+
+// Feature 1: Submit correction request
+async function submitCorrectionRequest() {
+  const id = document.getElementById('correction-app-id').value;
+  const reason = document.getElementById('correction-reason').value.trim();
+  const docs = document.getElementById('correction-docs-required').value.trim();
+  if (!reason) { alert('Please enter a correction reason'); return; }
+  const data = await apiFetch(`/api/staff/applications/${id}/request-correction`, {
+    method: 'POST', body: JSON.stringify({ correction_reason: reason, required_documents: docs })
   });
+  if (data && data.success) { closeModal('correction-modal'); alert('Correction request sent to citizen.'); showSectionById('pending'); loadPendingApps(); }
+  else alert(data?.error || 'Failed');
 }
 
-// ── FEATURE 1: CORRECTIONS ────────────────────
-async function loadCorrections() {
-  const data = await apiFetch('/api/citizen/corrections');
-  const el = document.getElementById('corrections-list');
-  if (!data || data.length === 0) { el.innerHTML = '<div class="empty-state" style="padding:48px"><i class="fas fa-check-circle" style="color:#10b981;font-size:2.5rem"></i><p style="margin-top:12px">No correction requests. All good!</p></div>'; return; }
-
-  el.innerHTML = `
-    <table class="applications-table">
-      <thead><tr><th>Service</th><th>Reason</th><th>Required Docs</th><th>Status</th><th>Action</th></tr></thead>
-      <tbody>${data.map(c => `
-        <tr>
-          <td>${c.service_name}</td>
-          <td>${c.correction_reason}</td>
-          <td><small>${c.required_documents || '–'}</small></td>
-          <td>${statusBadge(c.status)}</td>
-          <td>${c.status === 'pending' ? `<button class="btn btn-warning btn-sm" onclick="openResubmit(${c.id}, '${encodeURIComponent(c.correction_reason)}', '${encodeURIComponent(c.required_documents||'')}')"><i class="fas fa-redo"></i> Resubmit</button>` : '<span style="color:#64748b;font-size:.8rem">Submitted</span>'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
-}
-
-function openResubmit(id, reason, docs) {
-  document.getElementById('correction-id').value = id;
-  document.getElementById('correction-reason-display').innerHTML = `<strong>Staff requires:</strong> ${decodeURIComponent(reason)}<br><strong>Documents needed:</strong> ${decodeURIComponent(docs)}`;
-  openModal('resubmit-modal');
-}
-
-async function submitCorrection() {
-  const id = document.getElementById('correction-id').value;
-  const notes = document.getElementById('correction-notes').value;
-  const formData = new FormData();
-  formData.append('correction_notes', notes);
-  const files = document.getElementById('correction-docs').files;
-  for (let f of files) formData.append('documents', f);
-
-  const res = await fetch(`/api/citizen/corrections/${id}/resubmit`, {
-    method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
-  });
-  const data = await res.json();
-  if (data.success) { closeModal('resubmit-modal'); alert('Resubmitted successfully!'); loadCorrections(); }
-  else alert(data.error || 'Failed to resubmit');
-}
-
-// ── FEATURE 2: RENEWALS ───────────────────────
-async function loadRenewals() {
-  const certs = await apiFetch('/api/citizen/certificates/renewable');
-  const el = document.getElementById('renewals-list');
-  if (!certs || certs.length === 0) {
-    el.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:#10b981;font-size:2.5rem"></i><p style="margin-top:12px">No certificates due for renewal!</p></div>';
-    return;
-  }
-  el.innerHTML = certs.map(c => `
-    <div class="cert-card">
-      <div class="cert-info">
-        <h4>${c.service_name}</h4>
-        <p><strong>Purpose:</strong> ${c.purpose || '–'}</p>
-        <p><strong>Issued:</strong> ${formatDate(c.issued_at)}</p>
-        <p><strong>Expires:</strong> ${formatDate(c.expiry_date)}</p>
-        <div style="margin-top:6px">${c.expiry_status === 'expired' ? '<span class="badge badge-expired">Expired</span>' : '<span class="badge badge-pending">Expiring Soon</span>'}</div>
-      </div>
-      <div>
-        <button class="btn btn-primary" onclick="renewCertificate(${c.id}, this)"><i class="fas fa-sync-alt"></i> Renew Now</button>
-      </div>
-    </div>`).join('');
-}
-
-async function renewCertificate(certId, btn) {
-  btn.disabled = true; btn.textContent = 'Processing…';
-  const data = await apiFetch(`/api/citizen/certificates/${certId}/renew`, { method: 'POST' });
-  if (data && data.success) { alert('Renewal application submitted! Application ID: ' + data.application_id); loadRenewals(); }
-  else { alert(data?.error || 'Failed to submit renewal'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Renew Now'; }
-}
-
-// ── FEATURE 5: MULTI-APPLICATION ──────────────
-async function loadMultiApps() {
-  const data = await apiFetch('/api/citizen/multi-application');
-  const el = document.getElementById('multi-app-list');
+// Feature 1: Staff corrections list
+async function loadStaffCorrections() {
+  const data = await apiFetch('/api/staff/corrections/pending');
+  const el = document.getElementById('staff-corrections-list');
   if (!data || data.length === 0) {
-    el.innerHTML = '<div class="empty-state" style="padding:48px"><i class="fas fa-layer-group"></i><p>No multi-applications yet.</p></div>';
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No resubmitted corrections awaiting review.</p></div>';
     return;
   }
+  el.innerHTML = `<table class="applications-table">
+    <thead><tr><th>Citizen</th><th>Service</th><th>Correction Reason</th><th>Resubmitted</th><th>Action</th></tr></thead>
+    <tbody>${data.map(c => `
+      <tr>
+        <td>${c.citizen_name}</td>
+        <td>${c.service_name}</td>
+        <td>${c.correction_reason}</td>
+        <td>${formatDate(c.resubmitted_at)}</td>
+        <td>
+          <button class="btn btn-success btn-sm" onclick="approveCorrectionAndVerify(${c.application_id}, ${c.id})"><i class="fas fa-check"></i> Review & Approve</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function approveCorrectionAndVerify(appId, corrId) {
+  await apiFetch(`/api/staff/corrections/${corrId}/approve`, { method: 'POST' });
+  openVerify(appId);
+  showSectionById('verify');
+}
+
+// Feature 9: Get next in queue
+async function getNextInQueue() {
+  const data = await apiFetch('/api/staff/queue/next');
+  if (!data || !data.application) { alert('No applications in queue right now!'); return; }
+  openVerify(data.application.id);
+  showSectionById('verify');
+}
+
+// Feature 10: My workload
+async function loadMyWorkload() {
+  const data = await apiFetch('/api/staff/workload');
+  const el = document.getElementById('workload-content');
+  if (!data || data.message) { el.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>No workload data available yet.</p></div>'; return; }
   el.innerHTML = `
-    <table class="applications-table">
-      <thead><tr><th>Purpose</th><th>Total</th><th>Approved</th><th>Pending</th><th>Date</th><th>Status</th></tr></thead>
-      <tbody>${data.map(m => `
-        <tr>
-          <td>${m.purpose}</td>
-          <td>${m.total_sub || m.total_services}</td>
-          <td>${m.approved_sub || 0}</td>
-          <td>${m.pending_sub || 0}</td>
-          <td>${formatDate(m.created_at)}</td>
-          <td>${statusBadge(m.status)}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
-}
-
-let allServices = [];
-async function loadServices() {
-  const services = await apiFetch('/api/citizen/services');
-  allServices = services || [];
-  const sel = document.getElementById('app-service-id');
-  sel.innerHTML = '<option value="">Select a service...</option>' + allServices.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-}
-
-function openMultiAppModal() {
-  const grid = document.getElementById('multi-service-grid');
-  grid.innerHTML = allServices.map(s => `
-    <label class="service-checkbox-item">
-      <input type="checkbox" value="${s.id}"> ${s.name}
-    </label>`).join('');
-  openModal('multi-app-modal');
-}
-
-async function submitMultiApp() {
-  const purpose = document.getElementById('multi-purpose').value.trim();
-  const checked = [...document.querySelectorAll('#multi-service-grid input:checked')].map(c => c.value);
-  if (!purpose) { alert('Please enter a purpose'); return; }
-  if (checked.length < 2) { alert('Please select at least 2 services'); return; }
-
-  const data = await apiFetch('/api/citizen/multi-application', {
-    method: 'POST',
-    body: JSON.stringify({ purpose, service_ids: checked })
-  });
-  if (data && data.success) { closeModal('multi-app-modal'); alert('Multi-application submitted!'); loadMultiApps(); }
-  else alert(data?.error || 'Failed to submit');
-}
-
-// ── FEATURE 6: TIMELINE ───────────────────────
-async function loadTimeline() {
-  const events = await apiFetch('/api/citizen/timeline');
-  const el = document.getElementById('timeline-list');
-  if (!events || events.length === 0) {
-    el.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><p>No activity yet.</p></div>';
-    return;
-  }
-  el.innerHTML = '<div class="timeline">' + events.map(e => `
-    <div class="timeline-item ${e.event_category}">
-      <div class="timeline-content">
-        <h4>${e.event_title}</h4>
-        <p>${e.event_description}</p>
-        <div class="time"><i class="fas fa-clock"></i> ${formatDate(e.created_at)}</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${data.total_approved || 0}</div><div class="stat-label">Total Approved</div></div>
+      <div class="stat-card" style="border-color:#ef4444"><div class="stat-value" style="color:#ef4444">${data.total_rejected || 0}</div><div class="stat-label">Total Rejected</div></div>
+      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b">${data.total_assigned || 0}</div><div class="stat-label">Total Assigned</div></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="margin-bottom:16px">Performance Overview</h3>
+      <p style="color:#64748b;font-size:.9rem">Approval Rate: <strong>${data.total_approved + data.total_rejected > 0 ? Math.round((data.total_approved / (data.total_approved + data.total_rejected)) * 100) : 0}%</strong></p>
+      <div class="workload-bar-wrap" style="margin-top:8px">
+        <div class="workload-bar"><div class="workload-bar-fill" style="width:${data.total_approved + data.total_rejected > 0 ? Math.round((data.total_approved / (data.total_approved + data.total_rejected)) * 100) : 0}%;background:#10b981"></div></div>
       </div>
-    </div>`).join('') + '</div>';
+    </div>`;
 }
 
-// ── APPLICATION SUBMIT ────────────────────────
-function openNewAppModal() { openModal('new-app-modal'); }
-
-async function submitApplication() {
-  const serviceId = document.getElementById('app-service-id').value;
-  const purpose = document.getElementById('app-purpose').value.trim();
-  const details = document.getElementById('app-details').value.trim();
-  const files = document.getElementById('app-docs').files;
-
-  if (!serviceId || !purpose) { alert('Please fill in all required fields'); return; }
-
-  const formData = new FormData();
-  formData.append('service_id', serviceId);
-  formData.append('purpose', purpose);
-  formData.append('details', details);
-  for (let f of files) formData.append('documents', f);
-
-  const res = await fetch('/api/citizen/applications', {
-    method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
-  });
-  const data = await res.json();
-  if (data.success) {
-    closeModal('new-app-modal');
-    alert('Application submitted! ID: ' + data.application_id);
-    loadHomeStats();
-  } else alert(data.error || 'Failed to submit');
-}
-
-function downloadCert(id) {
-  window.open(`/api/citizen/certificates/${id}/download?token=${token}`, '_blank');
-}
-
-// ── HELPERS ───────────────────────────────────
 function formatDate(d) {
   if (!d) return '–';
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function statusBadge(status) {
-  const map = {
-    pending: ['badge-pending', 'Pending'],
-    approved: ['badge-approved', 'Approved'],
-    rejected: ['badge-rejected', 'Rejected'],
-    correction_required: ['badge-correction', 'Correction Needed'],
-    resubmitted: ['badge-resubmitted', 'Resubmitted'],
-  };
-  const [cls, label] = map[status] || ['badge-pending', status];
-  return `<span class="badge ${cls}">${label}</span>`;
 }
 </script>
 </body>
