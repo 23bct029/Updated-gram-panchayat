@@ -7,27 +7,32 @@ const path = require('path');
 router.use(verifyToken);
 router.use(isStaff);
 
-router.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, '../views/staff/dashboard.html'));
-});
+function createNotification(db, userId, title, message, appId) {
+  db.run(
+    `INSERT INTO notifications (user_id, application_id, notification_type, title, message, is_read, sent_at)
+     VALUES (?, ?, 'system', ?, ?, 0, datetime('now'))`,
+    [userId, appId || null, title, message]
+  );
+}
 
 router.get('/applications/pending', (req, res) => {
   const db = req.app.locals.db;
   db.all(
     `SELECT a.application_id AS id, a.status, a.created_at, a.application_data,
             s.service_name, u.full_name AS citizen_name, u.phone, u.email,
-            CAST(julianday('now') - julianday(a.created_at) AS INTEGER) AS waiting_days
+            CAST(julianday('now') - julianday(a.created_at) AS INTEGER) AS waiting_days,
+            CASE WHEN CAST(julianday('now') - julianday(a.created_at) AS INTEGER) > 7 THEN 'high'
+                 WHEN CAST(julianday('now') - julianday(a.created_at) AS INTEGER) > 3 THEN 'medium'
+                 ELSE 'low' END AS priority
      FROM applications a
      JOIN services s ON a.service_id = s.service_id
      JOIN users u ON a.user_id = u.user_id
      WHERE a.status = 'pending'
      ORDER BY waiting_days DESC, a.created_at ASC`,
-    [],
-    (err, rows) => {
+    [], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows || []);
-    }
-  );
+    });
 });
 
 router.get('/applications', (req, res) => {
@@ -53,7 +58,7 @@ router.get('/applications/:id', (req, res) => {
   db.get(
     `SELECT a.application_id AS id, a.status, a.created_at, a.application_data, a.remarks,
             s.service_name, s.required_documents,
-            u.full_name AS citizen_name, u.email, u.phone, u.address, u.aadhar_number
+            u.full_name AS citizen_name, u.email, u.phone, u.address, u.aadhar_number, u.user_id
      FROM applications a
      JOIN services s ON a.service_id = s.service_id
      JOIN users u ON a.user_id = u.user_id
@@ -62,10 +67,9 @@ router.get('/applications/:id', (req, res) => {
     (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!row) return res.status(404).json({ error: 'Not found' });
-      try { const d = JSON.parse(row.application_data||'{}'); row.purpose = d.purpose||''; } catch(e) {}
+      try { const d = JSON.parse(row.application_data||'{}'); row.purpose = d.purpose||''; row.details = d.details||''; row.uploaded_docs = d.documents||[]; } catch(e) {}
       res.json(row);
-    }
-  );
+    });
 });
 
 router.post('/applications/:id/approve', (req, res) => {
@@ -88,16 +92,23 @@ router.post('/applications/:id/approve', (req, res) => {
           [appId, app.user_id, app.service_id, certNum, req.userId, hash],
           function(err3) {
             if (err3) return res.status(500).json({ error: err3.message });
+            const certId = this.lastID;
+            // Timeline
             db.run(
               `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at)
-               VALUES (?, 'application_approved', 'Application Approved', 'Your application was approved and certificate issued.', ?, datetime('now'))`,
+               VALUES (?, 'approved', 'Application Approved ✅', 'Your application was approved and certificate has been issued. You can download it now.', ?, datetime('now'))`,
               [app.user_id, appId]
             );
-            res.json({ success: true, certificate_id: this.lastID });
-          }
-        );
-      }
-    );
+            // Notification to citizen
+            createNotification(db, app.user_id, '🎉 Certificate Approved!',
+              `Your application has been approved! Your certificate is ready for download. Certificate No: ${certNum}${remarks ? '. Note: ' + remarks : ''}`, appId);
+            // Check if expiring soon and notify for renewal
+            db.run(`INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at)
+                    VALUES (?, 'certificate_issued', 'Certificate Issued 📜', ?, ?, datetime('now'))`,
+              [app.user_id, `Certificate ${certNum} issued. Valid for 1 year.`, certId]);
+            res.json({ success: true, certificate_id: certId });
+          });
+      });
   });
 });
 
@@ -113,12 +124,13 @@ router.post('/applications/:id/reject', (req, res) => {
         if (err2) return res.status(500).json({ error: err2.message });
         db.run(
           `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at)
-           VALUES (?, 'application_rejected', 'Application Rejected', ?, ?, datetime('now'))`,
+           VALUES (?, 'rejected', 'Application Rejected ❌', ?, ?, datetime('now'))`,
           [app.user_id, `Rejected: ${remarks}`, app.application_id]
         );
+        createNotification(db, app.user_id, '❌ Application Rejected',
+          `Your application has been rejected. Reason: ${remarks}. You may re-apply with correct documents.`, app.application_id);
         res.json({ success: true });
-      }
-    );
+      });
   });
 });
 
@@ -138,12 +150,13 @@ router.post('/applications/:id/request-correction', (req, res) => {
           if (err3) return res.status(500).json({ error: err3.message });
           db.run(
             `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at)
-             VALUES (?, 'correction_requested', 'Correction Requested', ?, ?, datetime('now'))`,
+             VALUES (?, 'correction_requested', 'Correction Requested ✏️', ?, ?, datetime('now'))`,
             [app.user_id, `Staff requested: ${correction_reason}`, appId]
           );
+          createNotification(db, app.user_id, '✏️ Correction Required',
+            `Staff has requested corrections for your application. Reason: ${correction_reason}. Required: ${required_documents || 'See details'}. Please resubmit.`, appId);
           res.json({ success: true, correction_id: this.lastID });
-        }
-      );
+        });
     });
   });
 });
@@ -158,12 +171,10 @@ router.get('/corrections/pending', (req, res) => {
      JOIN users u ON a.user_id = u.user_id
      WHERE ac.status='resubmitted'
      ORDER BY ac.resubmitted_at ASC`,
-    [],
-    (err, rows) => {
+    [], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows || []);
-    }
-  );
+    });
 });
 
 router.post('/corrections/:id/approve', (req, res) => {
@@ -189,8 +200,7 @@ router.get('/queue/next', (req, res) => {
      LEFT JOIN staff_assignments sa ON sa.application_id = a.application_id
      WHERE a.status='pending' AND sa.application_id IS NULL
      ORDER BY a.created_at ASC LIMIT 1`,
-    [],
-    (err, app) => {
+    [], (err, app) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!app) return res.json({ message: 'No applications in queue', application: null });
       db.run(
@@ -198,8 +208,7 @@ router.get('/queue/next', (req, res) => {
         [req.userId, app.id],
         () => res.json({ application: app })
       );
-    }
-  );
+    });
 });
 
 router.get('/workload', (req, res) => {
@@ -213,8 +222,7 @@ router.get('/workload', (req, res) => {
     (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(row || {});
-    }
-  );
+    });
 });
 
 module.exports = router;

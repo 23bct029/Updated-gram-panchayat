@@ -1,418 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Gram Panchayat Services Portal</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #2563A8 0%, #1B4D89 100%);
-            color: white;
-            padding: 15px 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo {
-            font-size: 48px;
-        }
-
-        .header-title h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .header-title p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .btn {
-            padding: 10px 25px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #2563A8;
-        }
-
-        .btn-primary:hover {
-            background: #f0f0f0;
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .hero {
-            background: linear-gradient(135deg, rgba(37, 99, 168, 0.95) 0%, rgba(27, 77, 137, 0.95) 100%),
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23ffffff" opacity="0.05" width="1200" height="600"/></svg>');
-            color: white;
-            padding: 100px 0;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .hero p {
-            font-size: 20px;
-            margin-bottom: 40px;
-            opacity: 0.95;
-        }
-
-        .features {
-            padding: 80px 0;
-            background: #F9FAFB;
-        }
-
-        .features h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 50px;
-            color: #1F2937;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 40px 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-card i {
-            font-size: 48px;
-            color: #2563A8;
-            margin-bottom: 20px;
-        }
-
-        .feature-card h3 {
-            font-size: 22px;
-            margin-bottom: 15px;
-            color: #1F2937;
-        }
-
-        .feature-card p {
-            color: #6B7280;
-            line-height: 1.7;
-        }
-
-        .services {
-            padding: 80px 0;
-        }
-
-        .services h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 50px;
-            color: #1F2937;
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-        }
-
-        .service-item {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            border-left: 4px solid #2563A8;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        }
-
-        .service-item h4 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #1F2937;
-        }
-
-        .service-item p {
-            color: #6B7280;
-            font-size: 14px;
-        }
-
-        .cta {
-            background: linear-gradient(135deg, #2563A8 0%, #1B4D89 100%);
-            color: white;
-            padding: 80px 0;
-            text-align: center;
-        }
-
-        .cta h2 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-
-        .cta p {
-            font-size: 18px;
-            margin-bottom: 40px;
-            opacity: 0.95;
-        }
-
-        .footer {
-            background: #1F2937;
-            color: white;
-            padding: 40px 0 20px;
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            margin-bottom: 30px;
-        }
-
-        .footer-section h3 {
-            font-size: 18px;
-            margin-bottom: 15px;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section ul li {
-            margin-bottom: 10px;
-        }
-
-        .footer-section a {
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-section a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
-            text-align: center;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.7);
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 32px;
-            }
-
-            .hero p {
-                font-size: 16px;
-            }
-
-            .features h2, .services h2, .cta h2 {
-                font-size: 28px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Gram Panchayat Services Portal</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--navy:#0f2a5e;--blue:#1a4da8;--sky:#2563eb;--gold:#c9a84c;--green:#059669;--gray:#64748b}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#f0f4f8;color:#1e293b}
+    a{text-decoration:none}
+    .header{background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);color:#fff;position:sticky;top:0;z-index:1000;box-shadow:0 2px 20px rgba(0,0,0,.2)}
+    .header-top{background:rgba(0,0,0,.15);padding:5px 0;font-size:11px;text-align:center;letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .header-main{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+    .logo-area{display:flex;align-items:center;gap:14px}
+    .logo-emblem{width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+    .logo-text h1{font-size:17px;font-weight:800;letter-spacing:.3px;line-height:1.2}
+    .logo-text p{font-size:11px;opacity:.8;margin-top:2px}
+    .header-nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .nav-link{padding:7px 14px;border-radius:6px;font-size:13px;font-weight:500;color:rgba(255,255,255,.85);transition:all .2s;cursor:pointer;border:none;background:none}
+    .nav-link:hover,.nav-link.active{background:rgba(255,255,255,.2);color:#fff}
+    .btn-gold{background:var(--gold);color:var(--navy);padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+    .btn-gold:hover{background:#e6c05a;transform:translateY(-1px)}
+    .btn-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+    .btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.1)}
+    .ticker{background:var(--gold);color:var(--navy);padding:6px 0;overflow:hidden;font-size:12px;font-weight:600}
+    .ticker-inner{display:flex;gap:60px;animation:ticker 35s linear infinite;white-space:nowrap}
+    @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    .tabs{background:#fff;border-bottom:2px solid #e2e8f0;position:sticky;top:79px;z-index:100}
+    .tabs-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;overflow-x:auto}
+    .tab-btn{padding:15px 22px;font-size:13px;font-weight:600;color:var(--gray);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+    .tab-btn:hover{color:var(--sky)}
+    .tab-btn.active{color:var(--sky);border-bottom-color:var(--sky)}
+    .sec{display:none}.sec.active{display:block}
+    .container{max-width:1200px;margin:0 auto;padding:36px 20px}
+    .sec-head{margin-bottom:24px}
+    .sec-head h2{font-size:24px;font-weight:800;color:#1e293b}
+    .sec-head p{font-size:14px;color:var(--gray);margin-top:5px}
+    .divider{width:44px;height:4px;background:linear-gradient(90deg,var(--sky),var(--gold));border-radius:4px;margin-top:8px}
+    /* HERO */
+    .hero{background:linear-gradient(135deg,var(--navy) 0%,#1e5bb4 60%,#2172d0 100%);color:#fff;padding:56px 20px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Crect x='0' y='0' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E")}
+    .hero-content{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;position:relative}
+    .hero h2{font-size:38px;font-weight:800;line-height:1.2;margin-bottom:14px}
+    .hero h2 span{color:var(--gold)}
+    .hero p{font-size:15px;opacity:.9;line-height:1.8;margin-bottom:26px}
+    .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+    .btn-hero{background:var(--gold);color:var(--navy);padding:13px 26px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+    .btn-hero:hover{background:#e6c05a;transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,168,76,.4)}
+    .btn-hero-out{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);padding:11px 26px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+    .btn-hero-out:hover{border-color:#fff;background:rgba(255,255,255,.1)}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .hs{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:18px;text-align:center;backdrop-filter:blur(10px)}
+    .hs .n{font-size:26px;font-weight:800;color:var(--gold)}
+    .hs .l{font-size:11px;opacity:.8;margin-top:3px}
+    /* QUICK ACCESS */
+    .qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:36px}
+    .qa-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e2e8f0;cursor:pointer;transition:all .22s;text-align:center}
+    .qa-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:var(--sky)}
+    .qa-card .ico{font-size:34px;margin-bottom:8px}
+    .qa-card h4{font-size:14px;font-weight:700;margin-bottom:3px}
+    .qa-card p{font-size:12px;color:var(--gray)}
+    /* SERVICES */
+    .sv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+    .sv-card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e2e8f0;transition:all .22s;cursor:pointer}
+    .sv-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:var(--sky)}
+    .sv-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;background:#f8fafc}
+    .sv-card h4{font-size:14px;font-weight:700;margin-bottom:5px;color:#1e293b}
+    .sv-card p{font-size:12px;color:var(--gray);line-height:1.6}
+    .sv-docs{margin-top:10px;padding:8px;background:#f8fafc;border-radius:6px;font-size:11px;color:#64748b}
+    .sv-meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9}
+    .sv-fee{font-size:13px;font-weight:700;color:var(--green)}
+    .sv-days{font-size:11px;color:var(--gray)}
+    .sv-apply{width:100%;margin-top:10px;background:var(--sky);color:#fff;border:none;padding:9px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+    .sv-apply:hover{background:#1d4ed8}
+    /* SCHEMES */
+    .sch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px}
+    .sch-card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e2e8f0;transition:all .22s}
+    .sch-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+    .sch-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+    .sch-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#eff6ff,#dbeafe);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+    .sch-head h4{font-size:15px;font-weight:700;color:#1e293b}
+    .sch-cat{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:#f1f5f9;color:var(--gray);margin-top:4px;display:inline-block}
+    .sch-card p{font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:10px}
+    .sch-box{border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:10px}
+    .sch-eligible{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+    .sch-benefit{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+    .sch-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn-scheme{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--sky);color:#fff;border-radius:6px;font-size:12px;font-weight:600;transition:.2s;border:none;cursor:pointer}
+    .btn-scheme:hover{background:#1d4ed8}
+    .highlight-badge{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+    /* ANNOUNCEMENTS */
+    .ann-list{display:flex;flex-direction:column;gap:14px}
+    .ann-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1px solid #e2e8f0;border-left:4px solid var(--sky);cursor:pointer;transition:all .2s}
+    .ann-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+    .ann-card.health{border-left-color:#10b981}
+    .ann-card.notice{border-left-color:#f59e0b}
+    .ann-card.scheme{border-left-color:#8b5cf6}
+    .ann-card.meeting{border-left-color:#06b6d4}
+    .ann-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+    .ann-title{font-size:15px;font-weight:700;color:#1e293b}
+    .ann-date{font-size:12px;color:var(--gray);white-space:nowrap;margin-left:10px}
+    .ann-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:6px}
+    .ann-badge.health{background:#d1fae5;color:#065f46}
+    .ann-badge.notice{background:#fef3c7;color:#92400e}
+    .ann-badge.scheme{background:#ede9fe;color:#5b21b6}
+    .ann-badge.meeting{background:#cffafe;color:#0e7490}
+    .ann-badge.general{background:#f1f5f9;color:#475569}
+    .ann-preview{font-size:13px;color:var(--gray);line-height:1.6}
+    .ann-more{font-size:12px;color:var(--sky);font-weight:600;margin-top:6px}
+    /* STEPS */
+    .steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:20px}
+    .step-card{text-align:center;padding:28px 18px;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .step-num{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--navy));color:#fff;font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+    .step-card h4{font-size:14px;font-weight:700;margin-bottom:5px}
+    .step-card p{font-size:12px;color:var(--gray);line-height:1.6}
+    /* MODAL */
+    .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:20px}
+    .modal-ov.open{display:flex}
+    .modal-box{background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto}
+    .modal-hdr{padding:20px 24px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+    .modal-hdr h3{font-size:17px;font-weight:700}
+    .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray);padding:4px}
+    .modal-body{padding:22px}
+    footer{background:var(--navy);color:rgba(255,255,255,.7);padding:36px 20px 16px;margin-top:0}
+    .footer-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:36px;margin-bottom:24px}
+    footer h4{color:#fff;font-size:14px;font-weight:700;margin-bottom:10px}
+    footer p,footer li{font-size:13px;line-height:1.8}
+    footer ul{list-style:none}
+    footer ul li a{color:rgba(255,255,255,.6);transition:.2s}
+    footer ul li a:hover{color:#fff}
+    .footer-bot{max-width:1200px;margin:0 auto;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);text-align:center;font-size:12px}
+    .loading-spin{text-align:center;padding:40px;color:var(--gray);font-size:13px}
+    .loading-spin i{font-size:22px;animation:spin 1s linear infinite;display:block;margin-bottom:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:768px){.hero-content{grid-template-columns:1fr}.hero-stats{display:none}.hero h2{font-size:26px}.footer-grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo-section">
-                    <div class="logo">🏛️</div>
-                    <div class="header-title">
-                        <h1>Digital Gram Panchayat</h1>
-                        <p>Services Portal</p>
-                    </div>
-                </div>
-                <div class="nav-buttons">
-                    <a href="/login" class="btn btn-secondary">Login</a>
-                    <a href="/register" class="btn btn-primary">Register</a>
-                </div>
-            </div>
-        </div>
-    </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1>Welcome to Digital Gram Panchayat</h1>
-            <p>Your one-stop solution for all Gram Panchayat services online</p>
-            <div>
-                <a href="/register" class="btn btn-primary" style="margin-right: 15px; padding: 15px 35px; font-size: 16px;">Get Started</a>
-                <a href="#services" class="btn btn-secondary" style="padding: 15px 35px; font-size: 16px;">Learn More</a>
-            </div>
-        </div>
-    </section>
+<header class="header">
+  <div class="header-top">🇮🇳 Government of India &nbsp;|&nbsp; Digital Gram Panchayat Services Portal &nbsp;|&nbsp; e-Governance Initiative</div>
+  <div class="header-main">
+    <div class="logo-area">
+      <div class="logo-emblem">🏛️</div>
+      <div class="logo-text">
+        <h1>Digital Gram Panchayat</h1>
+        <p>Services Portal &bull; Transparent &bull; Accessible &bull; Efficient</p>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <button class="nav-link active" onclick="switchTab('home',this)">🏠 Home</button>
+      <button class="nav-link" onclick="switchTab('services',this)">📄 Services</button>
+      <button class="nav-link" onclick="switchTab('schemes',this)">🌱 Schemes</button>
+      <button class="nav-link" onclick="switchTab('announcements',this)">📣 Announcements</button>
+      <button class="btn-gold" onclick="window.location.href='/login'"><i class="fas fa-sign-in-alt"></i> Login</button>
+      <button class="btn-ghost" onclick="window.location.href='/register'">Register</button>
+    </nav>
+  </div>
+</header>
 
-    <section class="features">
-        <div class="container">
-            <h2>Why Choose Us?</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i class="fas fa-clock"></i>
-                    <h3>24/7 Access</h3>
-                    <p>Apply for certificates and track your applications anytime, anywhere</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-shield-alt"></i>
-                    <h3>Secure & Safe</h3>
-                    <p>Your data is protected with advanced security measures</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <h3>Fast Processing</h3>
-                    <p>Get your certificates processed faster with digital workflow</p>
-                </div>
-                <div class="feature-card">
-                    <i class="fas fa-mobile-alt"></i>
-                    <h3>Easy to Use</h3>
-                    <p>Simple and intuitive interface for all age groups</p>
-                </div>
-            </div>
-        </div>
-    </section>
+<div class="ticker">
+  <div class="ticker-inner">
+    <span>🔔 Free Medical Camp: March 28–31 at Panchayat Office | Bring Aadhar &amp; Medical Records</span>
+    <span>🌾 PM-KISAN Registration Drive – Register by March 31st</span>
+    <span>🏠 PMAY-G Applications Open – Apply for housing assistance</span>
+    <span>💊 Ayushman Bharat – Health coverage of ₹5 lakh/year for eligible families</span>
+    <span>🔔 Free Medical Camp: March 28–31 at Panchayat Office | Bring Aadhar &amp; Medical Records</span>
+    <span>🌾 PM-KISAN Registration Drive – Register by March 31st</span>
+    <span>🏠 PMAY-G Applications Open – Apply for housing assistance</span>
+    <span>💊 Ayushman Bharat – Health coverage of ₹5 lakh/year for eligible families</span>
+  </div>
+</div>
 
-    <section class="services" id="services">
-        <div class="container">
-            <h2>Available Services</h2>
-            <div class="services-grid">
-                <div class="service-item">
-                    <h4><i class="fas fa-certificate" style="color: #2563A8; margin-right: 10px;"></i> Income Certificate</h4>
-                    <p>Apply for income certificate online with easy document upload</p>
-                </div>
-                <div class="service-item">
-                    <h4><i class="fas fa-certificate" style="color: #2563A8; margin-right: 10px;"></i> Caste Certificate</h4>
-                    <p>Get your caste certificate issued digitally</p>
-                </div>
-                <div class="service-item">
-                    <h4><i class="fas fa-certificate" style="color: #2563A8; margin-right: 10px;"></i> Residence Certificate</h4>
-                    <p>Apply for residence certificate with instant tracking</p>
-                </div>
-                <div class="service-item">
-                    <h4><i class="fas fa-baby" style="color: #2563A8; margin-right: 10px;"></i> Birth Certificate</h4>
-                    <p>Register and get birth certificates online</p>
-                </div>
-                <div class="service-item">
-                    <h4><i class="fas fa-user-friends" style="color: #2563A8; margin-right: 10px;"></i> Government Schemes</h4>
-                    <p>Access information about various government schemes</p>
-                </div>
-                <div class="service-item">
-                    <h4><i class="fas fa-search" style="color: #2563A8; margin-right: 10px;"></i> Track Status</h4>
-                    <p>Track your application status in real-time</p>
-                </div>
-            </div>
-        </div>
-    </section>
+<div class="tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" id="tab-home" onclick="switchTab('home',this)"><i class="fas fa-home"></i> Home</button>
+    <button class="tab-btn" id="tab-services" onclick="switchTab('services',this)"><i class="fas fa-file-alt"></i> Our Services</button>
+    <button class="tab-btn" id="tab-schemes" onclick="switchTab('schemes',this)"><i class="fas fa-seedling"></i> Govt. Schemes</button>
+    <button class="tab-btn" id="tab-announcements" onclick="switchTab('announcements',this)"><i class="fas fa-bullhorn"></i> Announcements <span id="ann-count" style="background:#ef4444;color:#fff;border-radius:20px;padding:1px 6px;font-size:11px;margin-left:2px;display:none"></span></button>
+    <button class="tab-btn" id="tab-how" onclick="switchTab('how',this)"><i class="fas fa-question-circle"></i> How It Works</button>
+  </div>
+</div>
 
-    <section class="cta">
-        <div class="container">
-            <h2>Ready to Get Started?</h2>
-            <p>Register now and experience hassle-free government services</p>
-            <a href="/register" class="btn btn-primary" style="padding: 15px 40px; font-size: 18px;">Register Now</a>
+<!-- HOME -->
+<div class="sec active" id="sec-home">
+  <div class="hero">
+    <div class="hero-content">
+      <div>
+        <h2>Your Village Services,<br><span>Now Online</span> 🏛️</h2>
+        <p>Apply for government certificates, track your applications, and access welfare schemes — anytime, from anywhere. Fast, transparent, and paperless.</p>
+        <div class="hero-btns">
+          <button class="btn-hero" onclick="window.location.href='/register'"><i class="fas fa-user-plus"></i> Register Now</button>
+          <button class="btn-hero-out" onclick="window.location.href='/login'"><i class="fas fa-sign-in-alt"></i> Citizen Login</button>
         </div>
-    </section>
+      </div>
+      <div class="hero-stats">
+        <div class="hs"><div class="n">8+</div><div class="l">Services Available</div></div>
+        <div class="hs"><div class="n">8</div><div class="l">Govt. Schemes</div></div>
+        <div class="hs"><div class="n">24/7</div><div class="l">Online Access</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div class="sec-head"><h2>Quick Access</h2><p>Everything you need, right here</p><div class="divider"></div></div>
+    <div class="qa-grid">
+      <div class="qa-card" onclick="window.location.href='/login'"><div class="ico">📋</div><h4>Apply for Certificate</h4><p>Income, Caste, Residence &amp; more</p></div>
+      <div class="qa-card" onclick="window.location.href='/login'"><div class="ico">🔍</div><h4>Track Application</h4><p>Check status of your applications</p></div>
+      <div class="qa-card" onclick="switchTab('schemes',document.getElementById('tab-schemes'))"><div class="ico">🌱</div><h4>Welfare Schemes</h4><p>Find schemes you're eligible for</p></div>
+      <div class="qa-card" onclick="switchTab('announcements',document.getElementById('tab-announcements'))"><div class="ico">📣</div><h4>Announcements</h4><p>Latest news &amp; events</p></div>
+    </div>
+    <div class="sec-head"><h2>Latest Announcements</h2><p>Stay informed about important events and notices from your Panchayat</p><div class="divider"></div></div>
+    <div id="home-ann"><div class="loading-spin"><i class="fas fa-spinner"></i>Loading...</div></div>
+    <div style="text-align:right;margin-top:10px"><button onclick="switchTab('announcements',document.getElementById('tab-announcements'))" style="background:none;border:none;color:var(--sky);font-size:13px;font-weight:600;cursor:pointer">View all announcements →</button></div>
+  </div>
+</div>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>About</h3>
-                    <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="#">Contact</a></li>
-                        <li><a href="#">FAQs</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>Services</h3>
-                    <ul>
-                        <li><a href="#">Certificates</a></li>
-                        <li><a href="#">Government Schemes</a></li>
-                        <li><a href="#">Track Application</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>Quick Links</h3>
-                    <ul>
-                        <li><a href="/login">Login</a></li>
-                        <li><a href="/register">Register</a></li>
-                        <li><a href="#">Help</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h3>Contact</h3>
-                    <ul>
-                        <li><i class="fas fa-phone"></i> 0141-2345678</li>
-                        <li><i class="fas fa-envelope"></i> info@grampanchayat.gov.in</li>
-                        <li><i class="fas fa-map-marker-alt"></i> Gram Panchayat Office</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Digital Gram Panchayat Services Portal. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+<!-- SERVICES -->
+<div class="sec" id="sec-services">
+  <div class="container">
+    <div class="sec-head"><h2>Our Services</h2><p>Official government certificates — apply online, upload documents, download when approved</p><div class="divider"></div></div>
+    <div class="sv-grid" id="services-grid"><div class="loading-spin"><i class="fas fa-spinner"></i>Loading services...</div></div>
+  </div>
+</div>
+
+<!-- SCHEMES -->
+<div class="sec" id="sec-schemes">
+  <div class="container">
+    <div class="sec-head"><h2>Government Welfare Schemes</h2><p>Find government schemes you may be eligible for. Click to visit the official portal.</p><div class="divider"></div></div>
+    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:12px;padding:14px 18px;margin-bottom:22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:22px">💡</div>
+      <div style="flex:1"><strong style="font-size:14px;color:#1d4ed8">Check Your Eligibility</strong><p style="font-size:12px;color:#3b82f6;margin-top:2px">Login to your citizen account to see which schemes you qualify for based on your profile.</p></div>
+      <button onclick="window.location.href='/login'" style="background:#2563eb;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Login to Check →</button>
+    </div>
+    <div class="sch-grid" id="schemes-grid"><div class="loading-spin"><i class="fas fa-spinner"></i>Loading schemes...</div></div>
+  </div>
+</div>
+
+<!-- ANNOUNCEMENTS -->
+<div class="sec" id="sec-announcements">
+  <div class="container">
+    <div class="sec-head"><h2>Announcements &amp; Notices</h2><p>Important notices, events, and updates from your Gram Panchayat</p><div class="divider"></div></div>
+    <div class="ann-list" id="ann-list"><div class="loading-spin"><i class="fas fa-spinner"></i>Loading...</div></div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="sec" id="sec-how">
+  <div class="container">
+    <div class="sec-head"><h2>How It Works</h2><p>Get your certificates in 4 simple steps</p><div class="divider"></div></div>
+    <div class="steps-grid">
+      <div class="step-card"><div class="step-num">1</div><h4>Register &amp; Login</h4><p>Create your citizen account with Aadhar and personal details</p></div>
+      <div class="step-card"><div class="step-num">2</div><h4>Apply Online</h4><p>Select the certificate, upload required documents securely</p></div>
+      <div class="step-card"><div class="step-num">3</div><h4>Staff Verification</h4><p>Panchayat officer reviews and verifies your application</p></div>
+      <div class="step-card"><div class="step-num">4</div><h4>Download Certificate</h4><p>Once approved, download your digitally signed certificate with QR code</p></div>
+    </div>
+    <div style="margin-top:40px">
+      <div class="sec-head"><h2>Available Certificates</h2><div class="divider"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px">
+        ${[['👶','Birth Certificate','School, passport, legal'],['💀','Death Certificate','Insurance, legal, property'],['🏠','Residence Certificate','Job, school, loan'],['💰','Income Certificate','Subsidies, scholarships'],['🫂','Caste Certificate','Reservations, scholarships'],['🌾','Agriculture Certificate','Farm subsidies, loans'],['👨‍👩‍👧','Dependant Certificate','Family welfare benefits'],['📝','Character Certificate','Employment, education']].map(([i,n,d])=>`<div style="background:#fff;border-radius:10px;padding:16px;border:1px solid #e2e8f0;text-align:center"><div style="font-size:28px;margin-bottom:7px">${i}</div><div style="font-size:13px;font-weight:700;margin-bottom:3px">${n}</div><div style="font-size:11px;color:#64748b">${d}</div></div>`).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANNOUNCEMENT MODAL -->
+<div class="modal-ov" id="ann-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3 id="ann-modal-title">Announcement</h3>
+      <button class="modal-close" onclick="closeAnnModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="ann-modal-body"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <h4>🏛️ Digital Gram Panchayat Portal</h4>
+      <p style="margin-bottom:10px">An e-governance initiative to digitize Gram Panchayat services for all citizens.</p>
+      <p>📍 Gram Panchayat Office, Village Square</p>
+      <p>📞 +91 98765 43210 &nbsp;|&nbsp; ✉️ info@grampanchayat.gov.in</p>
+      <p style="margin-top:6px">⏰ Office Hours: Mon–Sat, 9:00 AM – 5:00 PM</p>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="/login">Citizen Login</a></li>
+        <li><a href="/register">New Registration</a></li>
+        <li><a href="#" onclick="switchTab('services',document.getElementById('tab-services'))">Services</a></li>
+        <li><a href="#" onclick="switchTab('schemes',document.getElementById('tab-schemes'))">Govt. Schemes</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Scheme Portals</h4>
+      <ul>
+        <li><a href="https://pmkisan.gov.in" target="_blank">PM-KISAN Portal</a></li>
+        <li><a href="https://nrega.nic.in" target="_blank">MNREGA</a></li>
+        <li><a href="https://pmjay.gov.in" target="_blank">Ayushman Bharat</a></li>
+        <li><a href="https://pmayg.nic.in" target="_blank">PMAY-G</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bot"><p>© 2025 Digital Gram Panchayat Services Portal. All rights reserved. | e-Governance Initiative</p></div>
+</footer>
+
+<script>
+const TYPES = {health:'Health',notice:'Notice',scheme:'Scheme',meeting:'Meeting',general:'General'};
+
+function switchTab(name, el) {
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn,.nav-link').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  const t=document.getElementById('tab-'+name); if(t) t.classList.add('active');
+  const loaders={services:loadServices,schemes:loadSchemes,announcements:loadAnnouncements,home:loadHomeAnn};
+  if(loaders[name]) loaders[name]();
+  window.scrollTo(0,0);
+}
+
+const SVC_DATA = [
+  {name:'Birth Certificate',desc:'Official birth certificate for school admission, passport, and legal purposes.',docs:'Aadhar Card, Hospital Birth Record (from doctor/hospital), Parent Photo ID, Parent Marriage Certificate',fee:100,days:'5–7 days',icon:'👶'},
+  {name:'Death Certificate',desc:'Official death certificate for insurance, legal and property matters.',docs:'Aadhar of Deceased, Doctor/Hospital Death Certificate, Photo ID of Applicant, FIR (if accidental)',fee:50,days:'3–5 days',icon:'💀'},
+  {name:'Caste Certificate',desc:'Official caste certificate for reservations, scholarships, and government schemes.',docs:'Aadhar Card, Ration Card, Parent Caste Certificate, Affidavit on Rs.50 stamp paper',fee:150,days:'10–15 days',icon:'🫂'},
+  {name:'Income Certificate',desc:'Annual income certificate for subsidies, scholarships and welfare benefits.',docs:'Aadhar Card, Salary Slip or Income Affidavit, Bank Passbook (last 3 months), Ration Card',fee:200,days:'7–10 days',icon:'💰'},
+  {name:'Residence Certificate',desc:'Proof of local residence for school admission, job applications and loans.',docs:'Aadhar Card, Utility Bill or Rent Agreement (latest), Voter ID, Ration Card',fee:100,days:'5–7 days',icon:'🏠'},
+  {name:'Agriculture Certificate',desc:'Certificate for farmers to avail agricultural subsidies and schemes.',docs:'Aadhar Card, Land Records (Patta/Khasra/7-12 extract), Ration Card, Farmer ID (if any)',fee:100,days:'7–10 days',icon:'🌾'},
+  {name:'Character Certificate',desc:'Good conduct certificate for employment, admission and immigration.',docs:'Aadhar Card, Photo ID, 2 Passport Size Photos, Self-declaration affidavit',fee:50,days:'3–5 days',icon:'📝'},
+  {name:'Dependant Certificate',desc:'Certificate confirming dependent relationship for family benefits and insurance.',docs:'Aadhar of Applicant and Dependent, Family Ration Card, Relationship Proof (birth/marriage cert)',fee:100,days:'5–7 days',icon:'👨‍👩‍👧'},
+];
+
+function loadServices() {
+  const el = document.getElementById('services-grid');
+  if(el.dataset.loaded) return;
+  el.innerHTML = SVC_DATA.map(s=>`
+    <div class="sv-card" onclick="window.location.href='/login'">
+      <div class="sv-icon">${s.icon}</div>
+      <h4>${s.name}</h4>
+      <p>${s.desc}</p>
+      <div class="sv-docs"><strong>📎 Required:</strong> ${s.docs}</div>
+      <div class="sv-meta">
+        <span class="sv-fee">₹${s.fee}</span>
+        <span class="sv-days"><i class="fas fa-clock" style="margin-right:4px"></i>${s.days}</span>
+      </div>
+      <button class="sv-apply">Login to Apply →</button>
+    </div>`).join('');
+  el.dataset.loaded='1';
+}
+
+const SCH_DATA = [
+  {name:'PM-KISAN',cat:'Agriculture',emoji:'🌾',desc:'Direct income support of ₹6,000/year for farmers with land holdings paid in 3 installments.',elig:'Farmers owning cultivable land (not government employees)',benefit:'₹6,000 per year in 3 installments of ₹2,000',link:'https://pmkisan.gov.in'},
+  {name:'MNREGA',cat:'Employment',emoji:'⛏️',desc:'Guarantees 100 days of wage employment per year to rural households willing to do unskilled work.',elig:'Any adult member of a rural household',benefit:'100 days of work guarantee at minimum wages',link:'https://nrega.nic.in'},
+  {name:'PMAY-G',cat:'Housing',emoji:'🏠',desc:'Financial assistance to BPL families to construct pucca (permanent) houses with basic amenities.',elig:'BPL families, SC/ST, minorities, minorities not owning a pucca house',benefit:'₹1.20 lakh (plains) / ₹1.30 lakh (hilly/difficult areas)',link:'https://pmayg.nic.in'},
+  {name:'Sukanya Samriddhi',cat:'Women & Child',emoji:'👧',desc:'Long-term savings scheme for girl child to secure funds for education and marriage.',elig:'Parents/guardians of girl child below 10 years of age',benefit:'8.2% interest rate per annum with full tax benefits',link:'https://www.nsiindia.gov.in'},
+  {name:'Ayushman Bharat',cat:'Healthcare',emoji:'🏥',desc:'Provides health insurance coverage of ₹5 lakh per family per year for hospitalization.',elig:'Bottom 40% population as per SECC-2011 database',benefit:'₹5 lakh health insurance per family per year (cashless)',link:'https://pmjay.gov.in'},
+  {name:'PM Ujjwala Yojana',cat:'Energy',emoji:'🔥',desc:'Free LPG cooking gas connections to women from Below Poverty Line households.',elig:'BPL women aged 18 years and above',benefit:'Free LPG connection + deposit waiver + first refill free',link:'https://pmuy.gov.in'},
+  {name:'Kisan Credit Card',cat:'Agriculture',emoji:'💳',desc:'Short-term credit facility for farmers to meet cultivation, post-harvest, and allied expenses.',elig:'Farmers, sharecroppers, oral lessees and tenant farmers',benefit:'Revolving credit up to ₹3 lakh at 7% interest p.a.',link:'https://www.nabard.org'},
+  {name:'NPS – Unorganised',cat:'Social Security',emoji:'👴',desc:'Pension scheme to provide old-age security to workers in unorganised sectors.',elig:'Indian citizens aged 18–40 years, unorganised sector workers',benefit:'Monthly pension of ₹3,000+ after age 60',link:'https://www.npscra.nsdl.co.in'},
+];
+
+function loadSchemes() {
+  const el = document.getElementById('schemes-grid');
+  if(el.dataset.loaded) return;
+  el.innerHTML = SCH_DATA.map(s=>`
+    <div class="sch-card">
+      <div class="sch-head">
+        <div class="sch-icon">${s.emoji}</div>
+        <div><h4>${s.name}</h4><span class="sch-cat">${s.cat}</span></div>
+      </div>
+      <p>${s.desc}</p>
+      <div class="sch-box sch-eligible"><i class="fas fa-check-circle"></i> <strong>Eligibility:</strong> ${s.elig}</div>
+      <div class="sch-box sch-benefit"><i class="fas fa-gift"></i> <strong>Benefit:</strong> ${s.benefit}</div>
+      <div class="sch-actions">
+        <a href="${s.link}" target="_blank" class="btn-scheme"><i class="fas fa-external-link-alt"></i> Official Portal</a>
+        <div class="highlight-badge"><i class="fas fa-star"></i> Check eligibility after login</div>
+      </div>
+    </div>`).join('');
+  el.dataset.loaded='1';
+}
+
+function renderAnns(data, containerId, limit) {
+  const el=document.getElementById(containerId);
+  const items=limit?data.slice(0,limit):data;
+  if(!items.length){el.innerHTML='<div style="text-align:center;padding:40px;color:#64748b"><i class="fas fa-bell-slash" style="font-size:2rem;display:block;margin-bottom:8px"></i>No announcements at this time.</div>';return;}
+  el.innerHTML=items.map(a=>{
+    const type=a.announcement_type||'general';
+    const date=new Date(a.published_on).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const preview=a.content.substring(0,120)+(a.content.length>120?'…':'');
+    return `<div class="ann-card ${type}" onclick="openAnnModal('${encodeURIComponent(a.title)}','${encodeURIComponent(a.content)}','${type}','${date}')">
+      <div class="ann-row"><span class="ann-title">${a.title}</span><span class="ann-date"><i class="fas fa-calendar-alt"></i> ${date}</span></div>
+      <span class="ann-badge ${type}">${TYPES[type]||type}</span>
+      <div class="ann-preview">${preview}</div>
+      <div class="ann-more">Click to read full announcement →</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAnnouncements() {
+  const el=document.getElementById('ann-list');
+  if(el.dataset.loaded) return;
+  try{
+    const r=await fetch('/api/public/announcements');
+    const d=await r.json();
+    renderAnns(d,'ann-list');
+    el.dataset.loaded='1';
+    setBadge(d.length);
+  }catch(e){el.innerHTML='<p style="color:#64748b;text-align:center;padding:40px">Could not load announcements.</p>';}
+}
+
+async function loadHomeAnn() {
+  const el=document.getElementById('home-ann');
+  if(el.dataset.loaded) return;
+  try{
+    const r=await fetch('/api/public/announcements');
+    const d=await r.json();
+    renderAnns(d,'home-ann',3);
+    el.dataset.loaded='1';
+    setBadge(d.length);
+  }catch(e){}
+}
+
+function setBadge(n){const c=document.getElementById('ann-count');if(n){c.textContent=n;c.style.display='inline';}}
+
+function openAnnModal(title,content,type,date){
+  document.getElementById('ann-modal-title').textContent=decodeURIComponent(title);
+  document.getElementById('ann-modal-body').innerHTML=`
+    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+      <span class="ann-badge ${type}">${TYPES[type]||type}</span>
+      <span style="font-size:12px;color:#64748b"><i class="fas fa-calendar-alt"></i> ${date}</span>
+    </div>
+    <div style="font-size:14px;line-height:2;color:#334155;white-space:pre-line">${decodeURIComponent(content)}</div>`;
+  document.getElementById('ann-modal').classList.add('open');
+}
+function closeAnnModal(){document.getElementById('ann-modal').classList.remove('open');}
+document.getElementById('ann-modal').addEventListener('click',function(e){if(e.target===this)closeAnnModal();});
+
+window.onload=()=>{ loadHomeAnn(); };
+</script>
 </body>
 </html>

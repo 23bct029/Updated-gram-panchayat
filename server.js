@@ -214,7 +214,22 @@ const seedDefaultAccounts = (db) => {
 
             console.log('✓ Admin account seeded');
             console.log('✓ Citizen account seeded');
-            console.log('✓ Staff account seeded');
+            console.log('\u2713 Staff account seeded');
+
+            // Seed sample announcements
+            const announcements = [
+              ['Free Medical Camp – March 28-31', 'A free medical camp will be conducted from March 28 to March 31 at the Gram Panchayat Office. All residents are invited. Please bring: Aadhar Card, Birth Certificate, and any recent medical checkup reports. Free checkup for blood pressure, diabetes, and eye care will be available.', 'health'],
+              ['Water Supply Maintenance – April 3', 'The water supply will be suspended on April 3rd from 9 AM to 5 PM for pipeline maintenance. Please store adequate water in advance.', 'notice'],
+              ['PM-KISAN Registration Drive', 'Eligible farmers can register for PM-KISAN scheme at the Panchayat office. Bring land documents, Aadhar, and bank passbook. Registration open until March 31.', 'scheme'],
+              ['Panchayat Budget Meeting – April 10', 'Annual budget meeting will be held on April 10 at 10 AM. All ward members and citizens are invited to participate in the planning process.', 'meeting'],
+            ];
+            const annDb = db;
+            announcements.forEach(([title, content, type]) => {
+              annDb.db.run(
+                "INSERT OR IGNORE INTO announcements (title, content, announcement_type, published_by, is_active, published_on) VALUES (?, ?, ?, 1, 1, datetime('now'))",
+                [title, content, type], (err) => { if (err && !err.message.includes('UNIQUE')) {} }
+              );
+            });
             resolve();
         } catch (error) {
             console.error('Error seeding accounts:', error);
@@ -271,6 +286,26 @@ app.use('/auth', authRoutes);
 app.use('/api/citizen', citizenRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Public endpoints (no auth)
+app.get('/api/public/announcements', (req, res) => {
+  const db = req.app.locals.db;
+  db.all("SELECT * FROM announcements WHERE is_active=1 AND (expiry_date IS NULL OR expiry_date > datetime('now')) ORDER BY published_on DESC LIMIT 20",
+    [], (err, rows) => { res.json(rows || []); });
+});
+
+app.get('/api/public/schemes', (req, res) => {
+  res.json([
+    { id:1, name:'PM-KISAN', category:'Agriculture', desc:'Direct income support of Rs.6,000/year for farmers.', eligibility:'Farmers owning cultivable land', benefit:'Rs.6,000 per year', link:'https://pmkisan.gov.in' },
+    { id:2, name:'MNREGA', category:'Employment', desc:'100 days guaranteed wage employment for rural households.', eligibility:'Rural households', benefit:'100 days work guarantee', link:'https://nrega.nic.in' },
+    { id:3, name:'PMAY-G', category:'Housing', desc:'Financial assistance to BPL families to build pucca houses.', eligibility:'BPL families, SC/ST, minorities', benefit:'Up to Rs.1.30 lakh', link:'https://pmayg.nic.in' },
+    { id:4, name:'Sukanya Samriddhi', category:'Women & Child', desc:'Savings scheme for girl child education and marriage.', eligibility:'Girl child below 10 years', benefit:'8.2% interest rate, tax benefits', link:'https://www.nsiindia.gov.in' },
+    { id:5, name:'Ayushman Bharat', category:'Healthcare', desc:'Health coverage of Rs.5 lakh per family per year.', eligibility:'Bottom 40% population', benefit:'Rs.5 lakh health insurance/year', link:'https://pmjay.gov.in' },
+    { id:6, name:'PM Ujjwala Yojana', category:'Energy', desc:'Free LPG connections to women from BPL households.', eligibility:'BPL women, 18+ years', benefit:'Free LPG connection + first refill', link:'https://pmuy.gov.in' },
+    { id:7, name:'Kisan Credit Card', category:'Agriculture', desc:'Credit facility for farmers at subsidised interest.', eligibility:'Farmers, sharecroppers, tenant farmers', benefit:'Credit up to Rs.3 lakh at 7%', link:'https://www.nabard.org' },
+    { id:8, name:'National Pension Scheme', category:'Social Security', desc:'Pension scheme for unorganised sector workers.', eligibility:'Age 18-40, unorganised workers', benefit:'Rs.3,000/month pension after 60', link:'https://www.npscra.nsdl.co.in' }
+  ]);
+});
 
 // ── HTML Pages ────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
