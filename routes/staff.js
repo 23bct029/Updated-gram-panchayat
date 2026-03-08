@@ -1,446 +1,266 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, isStaff } = require('../middleware/auth');
-const { generateCertificatePDF } = require('../utils/pdf');
+const db = require('../database/db');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const path = require('path');
-const fs = require('fs');
+const crypto = require('crypto');
 
-// Get staff dashboard data
-router.get('/dashboard', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const staffId = req.userId;
+router.use(authenticateToken);
+router.use(requireRole('staff'));
 
-    // Get pending applications count
-    db.query("SELECT COUNT(*) as pending FROM applications WHERE status = 'Pending'", (err, pendingCount) => {
-        if (err) {
-            console.error('Error counting pending:', err.message);
-        }
-        // Get assigned applications
-        const assignedQuery = `
-            SELECT a.*, s.service_name, u.full_name as citizen_name, u.phone 
-            FROM applications a 
-            JOIN services s ON a.service_id = s.service_id 
-            JOIN users u ON a.user_id = u.user_id 
-            WHERE a.assigned_to = ? OR a.assigned_to IS NULL
-            ORDER BY a.created_at DESC 
-            LIMIT 20
-        `;
-
-        db.query(assignedQuery, [staffId], (err, applications) => {
-            if (err) {
-                console.error('Error fetching applications:', err.message);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error fetching dashboard data'
-                });
-            }
-
-            res.json({
-                success: true,
-                pendingCount: (pendingCount && pendingCount[0]) ? pendingCount[0].pending : 0,
-                applications: applications || []
-            });
-        });
-    });
+// ─────────────────────────────────────────────
+// EXISTING: Staff Dashboard
+// ─────────────────────────────────────────────
+router.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/staff/dashboard.html'));
 });
 
-// Get all applications
-router.get('/applications', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const { status, search } = req.query;
-
-    let query = `
-        SELECT a.*, s.service_name, u.full_name as citizen_name, u.phone, u.email 
-        FROM applications a 
-        JOIN services s ON a.service_id = s.service_id 
-        JOIN users u ON a.user_id = u.user_id 
-        WHERE 1=1
-    `;
-    const params = [];
-
-    if (status) {
-        query += ' AND a.status = ?';
-        params.push(status);
+// EXISTING: Get pending applications (Feature 9: with queue priority)
+router.get('/applications/pending', (req, res) => {
+  db.all(
+    `SELECT a.*, s.name AS service_name, u.name AS citizen_name, u.phone,
+            CASE 
+              WHEN julianday('now') - julianday(a.created_at) > 7 THEN 'high'
+              WHEN julianday('now') - julianday(a.created_at) > 3 THEN 'medium'
+              ELSE 'low'
+            END AS priority,
+            CAST(julianday('now') - julianday(a.created_at) AS INTEGER) AS waiting_days,
+            sa.staff_id AS assigned_to
+     FROM applications a
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     LEFT JOIN staff_assignments sa ON sa.application_id = a.id
+     WHERE a.status = 'pending'
+       AND (sa.staff_id = ? OR sa.staff_id IS NULL)
+     ORDER BY 
+       CASE WHEN julianday('now') - julianday(a.created_at) > 7 THEN 1
+            WHEN julianday('now') - julianday(a.created_at) > 3 THEN 2
+            ELSE 3 END,
+       a.created_at ASC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
     }
+  );
+});
 
-    if (search) {
-        query += ' AND (a.application_id LIKE ? OR u.full_name LIKE ?)';
-        params.push(`%${search}%`, `%${search}%`);
+// EXISTING: Get all applications (verified, approved, rejected, etc.)
+router.get('/applications', (req, res) => {
+  const { status } = req.query;
+  let query = `SELECT a.*, s.name AS service_name, u.name AS citizen_name FROM applications a JOIN services s ON a.service_id = s.id JOIN users u ON a.citizen_id = u.id`;
+  const params = [];
+  if (status) {
+    query += ` WHERE a.status = ?`;
+    params.push(status);
+  }
+  query += ` ORDER BY a.created_at DESC`;
+  db.all(query, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(rows);
+  });
+});
+
+// EXISTING: Get single application detail
+router.get('/applications/:id', (req, res) => {
+  db.get(
+    `SELECT a.*, s.name AS service_name, u.name AS citizen_name, u.email, u.phone, u.address
+     FROM applications a
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     WHERE a.id = ?`,
+    [req.params.id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (!row) return res.status(404).json({ error: 'Not found' });
+      res.json(row);
     }
-
-    query += ' ORDER BY a.created_at DESC';
-
-    db.query(query, params, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching applications'
-            });
-        }
-        res.json({
-            success: true,
-            applications: results
-        });
-    });
+  );
 });
 
-// Get application details
-router.get('/application/:id', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.id;
+// EXISTING: Approve application & generate certificate
+router.post('/applications/:id/approve', (req, res) => {
+  const { remarks } = req.body;
+  const appId = req.params.id;
 
-    const query = `
-        SELECT a.*, s.service_name, s.description, 
-               u.full_name as citizen_name, u.phone, u.email, u.address, u.aadhar_number 
-        FROM applications a 
-        JOIN services s ON a.service_id = s.service_id 
-        JOIN users u ON a.user_id = u.user_id 
-        WHERE a.application_id = ?
-    `;
-
-    db.query(query, [applicationId], (err, appResults) => {
-        if (err || appResults.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        // Get documents
-        db.query(
-            'SELECT * FROM documents WHERE application_id = ?',
-            [applicationId],
-            (err, documents) => {
-                // Get status history
-                db.query(
-                    'SELECT * FROM status_history WHERE application_id = ? ORDER BY changed_at DESC',
-                    [applicationId],
-                    (err, history) => {
-                        res.json({
-                            success: true,
-                            application: appResults[0],
-                            documents: documents || [],
-                            history: history || []
-                        });
-                    }
-                );
-            }
-        );
-    });
-});
-
-// Update application status
-router.put('/application/:id/status', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.id;
-    const staffId = req.userId;
-    const { status, remarks } = req.body;
-
-    // Get current status first
-    db.query('SELECT status, user_id FROM applications WHERE application_id = ?', [applicationId], (err, currentApp) => {
-        if (err || currentApp.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        const oldStatus = currentApp[0].status;
-        const userId = currentApp[0].user_id;
-
-        // Update application
-        const updateQuery = `
-            UPDATE applications 
-            SET status = ?, remarks = ?, assigned_to = ?, updated_at = DATETIME('now') 
-            WHERE application_id = ?
-        `;
-
-        db.run(updateQuery, [status, remarks, staffId, applicationId], (err) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error updating application status'
-                });
-            }
-
-            // Add to status history
-            const historyQuery = `
-                INSERT INTO status_history (application_id, old_status, new_status, changed_by, user_type, remarks) 
-                VALUES (?, ?, ?, ?, 'Staff', ?)
-            `;
-            db.run(historyQuery, [applicationId, oldStatus, status, staffId, remarks]);
-
-            // Create notification for citizen
-            const notifQuery = `
-                INSERT INTO notifications (user_id, application_id, notification_type, title, message) 
-                VALUES (?, ?, 'Status Update', ?, ?)
-            `;
-            const notifTitle = `Application ${status}`;
-            const notifMessage = `Your application ${applicationId} status has been updated to ${status}. ${remarks || ''}`;
-            db.run(notifQuery, [userId, applicationId, notifTitle, notifMessage]);
-
-            res.json({
-                success: true,
-                message: 'Application status updated successfully'
-            });
-        });
-    });
-});
-
-// Verify document
-router.put('/document/:id/verify', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const documentId = req.params.id;
-    const staffId = req.userId;
-
-    const query = `
-        UPDATE documents 
-        SET is_verified = TRUE, verified_by = ?, verified_on = DATETIME('now') 
-        WHERE document_id = ?
-    `;
-
-    db.run(query, [staffId, documentId], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error verifying document'
-            });
-        }
-        res.json({
-            success: true,
-            message: 'Document verified successfully'
-        });
-    });
-});
-
-// Approve application and generate certificate
-router.post('/application/:id/approve', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.id;
-    const staffId = req.userId;
-
-    // Get complete application, user, and service details
-    const detailsQuery = `
-        SELECT a.*, u.full_name, u.aadhar_number, u.address, u.village, u.district, u.state,
-               s.service_name, s.service_type
-        FROM applications a
-        JOIN users u ON a.user_id = u.user_id
-        JOIN services s ON a.service_id = s.service_id
-        WHERE a.application_id = ?
-    `;
-
-    db.query(detailsQuery, [applicationId], async (err, appResults) => {
-        if (err || appResults.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        const application = appResults[0];
-        const { user_id, service_id, full_name, aadhar_number, address, village, district, state, service_name } = application;
-
-        // Generate certificate
-        const certificateId = 'CERT' + Date.now();
-        const certificateNumber = 'CERT-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-        const issueDate = new Date().toISOString().split('T')[0];
-
-        // Ensure uploads directory exists
-        const uploadsDir = path.join(__dirname, '..', 'uploads', 'certificates');
-        if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-
-        // Generate PDF file path
-        const pdfFileName = `${certificateNumber}.pdf`;
-        const pdfFilePath = path.join(uploadsDir, pdfFileName);
-
-        // Prepare certificate data for PDF
-        const certificateData = {
-            certificate_number: certificateNumber,
-            issue_date: issueDate,
-            service_name: service_name,
-            user_name: full_name,
-            aadhar_number: aadhar_number,
-            address: address || '',
-            village: village || '',
-            district: district || '',
-            state: state || ''
-        };
-
-        try {
-            // Generate PDF
-            await generateCertificatePDF(certificateData, pdfFilePath);
-
-            // Insert certificate record
-            const certQuery = `
-                INSERT INTO certificates 
-                (application_id, user_id, service_id, certificate_number, issue_date, issued_by, certificate_file_path) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
-
-            db.run(certQuery, [applicationId, user_id, service_id, certificateNumber, issueDate, staffId, `/uploads/certificates/${pdfFileName}`], (err) => {
-                if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: 'Error generating certificate',
-                        error: err.message
-                    });
-                }
-
-                // Update application status to Approved
-                db.run("UPDATE applications SET status = 'Approved' WHERE application_id = ?", [applicationId]);
-
-                // Create notification
-                const notifQuery = `
-                    INSERT INTO notifications (user_id, application_id, notification_type, title, message) 
-                    VALUES (?, ?, 'Approval', 'Application Approved', 'Your application has been approved. Certificate is ready for download.')
-                `;
-                db.run(notifQuery, [user_id, applicationId]);
-
-                res.json({
-                    success: true,
-                    message: 'Application approved and certificate generated',
-                    certificate_id: certificateId,
-                    certificate_number: certificateNumber,
-                    pdf_path: `/uploads/certificates/${pdfFileName}`
-                });
-            });
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error generating PDF',
-                error: error.message
-            });
-        }
-    });
-});
-
-// Reject application
-router.post('/application/:id/reject', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.id;
-    const staffId = req.userId;
-    const { reason } = req.body;
-
-    // Get user_id for notification
-    db.query('SELECT user_id FROM applications WHERE application_id = ?', [applicationId], (err, results) => {
-        if (err || results.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        const userId = results[0].user_id;
-
-        // Update application status
-        db.run(
-            "UPDATE applications SET status = 'Rejected', remarks = ? WHERE application_id = ?",
-            [reason, applicationId],
-            (err) => {
-                if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: 'Error rejecting application'
-                    });
-                }
-
-                // Create notification
-                const notifQuery = `
-                    INSERT INTO notifications (user_id, application_id, notification_type, title, message) 
-                    VALUES (?, ?, 'Rejection', 'Application Rejected', ?)
-                `;
-                db.run(notifQuery, [userId, applicationId, `Your application has been rejected. Reason: ${reason}`]);
-
-                res.json({
-                    success: true,
-                    message: 'Application rejected'
-                });
-            }
-        );
-    });
-});
-
-// Get statistics
-router.get('/statistics', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-
-    const statsQuery = `
-        SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
-            SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
-            SUM(CASE WHEN status = 'Verification' THEN 1 ELSE 0 END) as verification
-        FROM applications
-    `;
-
-    db.query(statsQuery, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching statistics'
-            });
-        }
-        const stats = (results && results[0]) ? results[0] : { total: 0, pending: 0, approved: 0, rejected: 0, verification: 0 };
-        res.json({
-            success: true,
-            statistics: stats
-        });
-    });
-});
-
-// Get staff profile
-router.get('/profile', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const staffId = req.staffId || req.userId;
-
-    db.query('SELECT staff_id, staff_name, email_address, phone FROM staff WHERE staff_id = ?', [staffId], (err, results) => {
-        if (err || !results || results.length === 0) {
-            return res.status(404).json({ success: false, message: 'Staff not found' });
-        }
-
-        const staff = results[0];
-        res.json({
-            success: true,
-            profile: {
-                name: staff.staff_name,
-                email: staff.email_address,
-                phone: staff.phone
-            }
-        });
-    });
-});
-
-// Update staff profile
-router.put('/profile', verifyToken, isStaff, (req, res) => {
-    const db = req.app.locals.db;
-    const staffId = req.staffId || req.userId;
-    const { name, phone } = req.body;
-
-    if (!name) {
-        return res.status(400).json({ success: false, message: 'Name is required' });
-    }
+  db.get(`SELECT * FROM applications WHERE id = ?`, [appId], (err, app) => {
+    if (err || !app) return res.status(404).json({ error: 'Application not found' });
 
     db.run(
-        'UPDATE staff SET staff_name = ?, phone = ?, updated_at = datetime("now") WHERE staff_id = ?',
-        [name, phone || '', staffId],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: 'Error updating profile' });
-            }
+      `UPDATE applications SET status = 'approved', staff_remarks = ?, reviewed_by = ?, updated_at = datetime('now') WHERE id = ?`,
+      [remarks, req.user.id, appId],
+      (err2) => {
+        if (err2) return res.status(500).json({ error: 'Failed to approve' });
 
-            res.json({
-                success: true,
-                message: 'Profile updated successfully',
-                profile: {
-                    name,
-                    phone
-                }
-            });
-        }
+        // Generate certificate hash
+        const hash = crypto.createHash('sha256')
+          .update(`${appId}-${Date.now()}-${process.env.JWT_SECRET || 'secret'}`)
+          .digest('hex');
+
+        // Issue certificate with expiry (1 year)
+        db.run(
+          `INSERT INTO certificates (application_id, issued_by, issued_at, expiry_date, verification_hash, status) 
+           VALUES (?,?,datetime('now'),date('now','+1 year'),?,'active')`,
+          [appId, req.user.id, hash],
+          function(err3) {
+            if (err3) return res.status(500).json({ error: 'Failed to generate certificate' });
+            // Timeline event for citizen
+            db.run(
+              `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+              [app.citizen_id, 'application_approved', 'Application Approved', `Your application was approved. Certificate issued.`, appId]
+            );
+            db.run(
+              `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+              [app.citizen_id, 'certificate_issued', 'Certificate Issued', `Certificate #${this.lastID} has been issued to you.`, this.lastID]
+            );
+            // Update workload
+            db.run(`UPDATE staff_workload SET approved_count = approved_count + 1, updated_at = datetime('now') WHERE staff_id = ?`, [req.user.id]);
+            res.json({ success: true, certificate_id: this.lastID });
+          }
+        );
+      }
     );
+  });
+});
+
+// EXISTING: Reject application (kept for backward compat)
+router.post('/applications/:id/reject', (req, res) => {
+  const { remarks } = req.body;
+  db.get(`SELECT * FROM applications WHERE id = ?`, [req.params.id], (err, app) => {
+    if (err || !app) return res.status(404).json({ error: 'Application not found' });
+    db.run(
+      `UPDATE applications SET status = 'rejected', staff_remarks = ?, reviewed_by = ?, updated_at = datetime('now') WHERE id = ?`,
+      [remarks, req.user.id, req.params.id],
+      (err2) => {
+        if (err2) return res.status(500).json({ error: 'Failed to reject' });
+        db.run(
+          `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+          [app.citizen_id, 'application_rejected', 'Application Rejected', `Your application was rejected. Reason: ${remarks}`, app.id]
+        );
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+// ─────────────────────────────────────────────
+// FEATURE 1: Request Correction (instead of reject)
+// ─────────────────────────────────────────────
+router.post('/applications/:id/request-correction', (req, res) => {
+  const { correction_reason, required_documents } = req.body;
+  const appId = req.params.id;
+
+  db.get(`SELECT * FROM applications WHERE id = ?`, [appId], (err, app) => {
+    if (err || !app) return res.status(404).json({ error: 'Application not found' });
+
+    db.run(
+      `UPDATE applications SET status = 'correction_required', updated_at = datetime('now') WHERE id = ?`,
+      [appId],
+      (err2) => {
+        if (err2) return res.status(500).json({ error: 'Failed to update status' });
+
+        db.run(
+          `INSERT INTO application_corrections (application_id, requested_by, correction_reason, required_documents, status, created_at) VALUES (?,?,?,?,'pending',datetime('now'))`,
+          [appId, req.user.id, correction_reason, required_documents],
+          function(err3) {
+            if (err3) return res.status(500).json({ error: 'Failed to create correction request' });
+            // Timeline event
+            db.run(
+              `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+              [app.citizen_id, 'correction_requested', 'Correction Requested', `Staff requested corrections: ${correction_reason}`, appId]
+            );
+            res.json({ success: true, correction_id: this.lastID });
+          }
+        );
+      }
+    );
+  });
+});
+
+// GET: Pending correction requests for this staff
+router.get('/corrections/pending', (req, res) => {
+  db.all(
+    `SELECT ac.*, a.id AS application_id, s.name AS service_name, u.name AS citizen_name
+     FROM application_corrections ac
+     JOIN applications a ON ac.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     WHERE ac.requested_by = ? AND ac.status = 'resubmitted'
+     ORDER BY ac.resubmitted_at ASC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
+    }
+  );
+});
+
+// POST: Approve correction (mark as resolved)
+router.post('/corrections/:id/approve', (req, res) => {
+  db.get(`SELECT * FROM application_corrections WHERE id = ?`, [req.params.id], (err, corr) => {
+    if (err || !corr) return res.status(404).json({ error: 'Correction not found' });
+    db.run(
+      `UPDATE application_corrections SET status = 'approved', resolved_at = datetime('now') WHERE id = ?`,
+      [req.params.id],
+      () => {
+        db.run(`UPDATE applications SET status = 'pending', updated_at = datetime('now') WHERE id = ?`, [corr.application_id]);
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+// ─────────────────────────────────────────────
+// FEATURE 9: Fair Queue - Next in Queue
+// ─────────────────────────────────────────────
+router.get('/queue/next', (req, res) => {
+  // Get oldest unassigned high-priority application not yet assigned to this staff
+  db.get(
+    `SELECT a.*, s.name AS service_name, u.name AS citizen_name,
+            CAST(julianday('now') - julianday(a.created_at) AS INTEGER) AS waiting_days
+     FROM applications a
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     LEFT JOIN staff_assignments sa ON sa.application_id = a.id
+     WHERE a.status = 'pending' AND sa.application_id IS NULL
+     ORDER BY a.created_at ASC
+     LIMIT 1`,
+    [],
+    (err, app) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (!app) return res.json({ message: 'No applications in queue', application: null });
+
+      // Auto-assign to requesting staff
+      db.run(
+        `INSERT OR IGNORE INTO staff_assignments (staff_id, application_id, assigned_at) VALUES (?,?,datetime('now'))`,
+        [req.user.id, app.id],
+        () => {
+          db.run(`UPDATE staff_workload SET pending_count = pending_count + 1, updated_at = datetime('now') WHERE staff_id = ?`, [req.user.id]);
+          res.json({ application: app });
+        }
+      );
+    }
+  );
+});
+
+// ─────────────────────────────────────────────
+// FEATURE 10: Staff Workload (own stats)
+// ─────────────────────────────────────────────
+router.get('/workload', (req, res) => {
+  db.get(
+    `SELECT sw.*, u.name AS staff_name,
+            (SELECT COUNT(*) FROM applications WHERE reviewed_by = sw.staff_id AND status = 'approved') AS total_approved,
+            (SELECT COUNT(*) FROM applications WHERE reviewed_by = sw.staff_id AND status = 'rejected') AS total_rejected,
+            (SELECT COUNT(*) FROM staff_assignments WHERE staff_id = sw.staff_id) AS total_assigned
+     FROM staff_workload sw
+     JOIN users u ON sw.staff_id = u.id
+     WHERE sw.staff_id = ?`,
+    [req.user.id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(row || { message: 'No workload data yet' });
+    }
+  );
 });
 
 module.exports = router;

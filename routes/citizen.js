@@ -1,522 +1,349 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, isCitizen } = require('../middleware/auth');
+const db = require('../database/db');
+const { authenticateToken, requireRole } = require('../middleware/auth');
+const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-// Configure multer for file uploads
+// Multer setup for document uploads
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = './uploads/documents';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
+  destination: (req, file, cb) => cb(null, 'public/uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+});
+const upload = multer({ storage });
+
+// Middleware: all citizen routes require auth + citizen role
+router.use(authenticateToken);
+router.use(requireRole('citizen'));
+
+// ─────────────────────────────────────────────
+// EXISTING: Dashboard
+// ─────────────────────────────────────────────
+router.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/citizen/dashboard.html'));
 });
 
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|pdf/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb('Error: Only .png, .jpg, .jpeg and .pdf files are allowed!');
-        }
+// ─────────────────────────────────────────────
+// EXISTING: My Applications
+// ─────────────────────────────────────────────
+router.get('/applications', (req, res) => {
+  db.all(
+    `SELECT a.*, s.name AS service_name 
+     FROM applications a 
+     JOIN services s ON a.service_id = s.id 
+     WHERE a.citizen_id = ? 
+     ORDER BY a.created_at DESC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
     }
+  );
 });
 
-// Get citizen dashboard data
-router.get('/dashboard', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
+router.post('/applications', upload.array('documents', 5), (req, res) => {
+  const { service_id, purpose, details } = req.body;
+  const citizen_id = req.user.id;
+  db.run(
+    `INSERT INTO applications (citizen_id, service_id, purpose, details, status, created_at) VALUES (?,?,?,?,'pending', datetime('now'))`,
+    [citizen_id, service_id, purpose, details],
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Failed to submit application' });
+      const appId = this.lastID;
+      // Insert timeline event
+      db.run(
+        `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+        [citizen_id, 'application_submitted', 'Application Submitted', `New application submitted for service #${service_id}`, appId]
+      );
+      res.json({ success: true, application_id: appId });
+    }
+  );
+});
 
-    // Get user info
-    db.query('SELECT * FROM users WHERE user_id = ?', [userId], (err, userResults) => {
-        if (err || userResults.length === 0) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching user data'
-            });
+// ─────────────────────────────────────────────
+// EXISTING: Certificates (with QR & Hash - Feature 3 & 4)
+// ─────────────────────────────────────────────
+router.get('/certificates', (req, res) => {
+  db.all(
+    `SELECT c.*, s.name AS service_name, a.purpose 
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     WHERE a.citizen_id = ?
+     ORDER BY c.issued_at DESC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      // Ensure each certificate has a hash
+      rows.forEach(cert => {
+        if (!cert.verification_hash) {
+          const hash = crypto.createHash('sha256')
+            .update(`${cert.id}-${cert.application_id}-${cert.issued_at}-${process.env.JWT_SECRET || 'secret'}`)
+            .digest('hex');
+          db.run(`UPDATE certificates SET verification_hash = ? WHERE id = ?`, [hash, cert.id]);
+          cert.verification_hash = hash;
         }
+      });
+      res.json(rows);
+    }
+  );
+});
 
-        // Get recent applications
-        const applicationsQuery = `
-            SELECT a.*, s.service_name, s.service_type 
-            FROM applications a 
-            JOIN services s ON a.service_id = s.service_id 
-            WHERE a.user_id = ? 
-            ORDER BY a.created_at DESC 
-            LIMIT 10
-        `;
+// Feature 3 & 4: Verify certificate by ID (citizen-facing)
+router.get('/certificates/:id/verify', (req, res) => {
+  db.get(
+    `SELECT c.*, s.name AS service_name, u.name AS citizen_name, a.purpose
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     WHERE c.id = ? AND a.citizen_id = ?`,
+    [req.params.id, req.user.id],
+    (err, cert) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (!cert) return res.status(404).json({ error: 'Certificate not found' });
+      // Log verification attempt
+      db.run(
+        `INSERT INTO certificate_verification_logs (certificate_id, verified_by, verification_method, created_at) VALUES (?,?,?,datetime('now'))`,
+        [cert.id, req.user.id, 'citizen_view']
+      );
+      res.json({ valid: true, certificate: cert });
+    }
+  );
+});
 
-        db.query(applicationsQuery, [userId], (err, applications) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error fetching applications'
-                });
+// ─────────────────────────────────────────────
+// FEATURE 1: Smart Application Correction System
+// ─────────────────────────────────────────────
+
+// GET: List correction requests for this citizen
+router.get('/corrections', (req, res) => {
+  db.all(
+    `SELECT ac.*, a.id AS application_id, s.name AS service_name, 
+            ac.correction_reason, ac.required_documents, ac.status,
+            ac.created_at, ac.resubmitted_at
+     FROM application_corrections ac
+     JOIN applications a ON ac.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     WHERE a.citizen_id = ?
+     ORDER BY ac.created_at DESC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
+    }
+  );
+});
+
+// POST: Citizen resubmits corrected application
+router.post('/corrections/:id/resubmit', upload.array('documents', 5), (req, res) => {
+  const { correction_notes } = req.body;
+  const correctionId = req.params.id;
+
+  db.get(
+    `SELECT ac.*, a.citizen_id FROM application_corrections ac JOIN applications a ON ac.application_id = a.id WHERE ac.id = ?`,
+    [correctionId],
+    (err, correction) => {
+      if (err || !correction) return res.status(404).json({ error: 'Correction not found' });
+      if (correction.citizen_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+
+      db.run(
+        `UPDATE application_corrections SET status = 'resubmitted', correction_notes = ?, resubmitted_at = datetime('now') WHERE id = ?`,
+        [correction_notes, correctionId],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: 'Failed to resubmit' });
+          // Reset application status to pending
+          db.run(`UPDATE applications SET status = 'pending', updated_at = datetime('now') WHERE id = ?`, [correction.application_id]);
+          // Timeline event
+          db.run(
+            `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+            [req.user.id, 'correction_resubmitted', 'Correction Resubmitted', 'You resubmitted a corrected application', correction.application_id]
+          );
+          res.json({ success: true, message: 'Application resubmitted successfully' });
+        }
+      );
+    }
+  );
+});
+
+// ─────────────────────────────────────────────
+// FEATURE 2: Certificate Renewal System
+// ─────────────────────────────────────────────
+
+// GET: List certificates eligible for renewal (expiring within 30 days or already expired)
+router.get('/certificates/renewable', (req, res) => {
+  db.all(
+    `SELECT c.*, s.name AS service_name, a.purpose,
+            CASE WHEN c.expiry_date < date('now') THEN 'expired'
+                 WHEN c.expiry_date < date('now', '+30 days') THEN 'expiring_soon'
+                 ELSE 'valid' END AS expiry_status
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     WHERE a.citizen_id = ?
+       AND (c.expiry_date IS NOT NULL)
+       AND (c.expiry_date < date('now', '+30 days'))
+       AND NOT EXISTS (
+         SELECT 1 FROM applications ar 
+         WHERE ar.parent_certificate_id = c.id AND ar.status NOT IN ('rejected')
+       )
+     ORDER BY c.expiry_date ASC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
+    }
+  );
+});
+
+// POST: Submit renewal application
+router.post('/certificates/:id/renew', (req, res) => {
+  db.get(
+    `SELECT c.*, a.service_id, a.purpose, a.citizen_id FROM certificates c JOIN applications a ON c.application_id = a.id WHERE c.id = ?`,
+    [req.params.id],
+    (err, cert) => {
+      if (err || !cert) return res.status(404).json({ error: 'Certificate not found' });
+      if (cert.citizen_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+
+      db.run(
+        `INSERT INTO applications (citizen_id, service_id, purpose, details, status, parent_certificate_id, created_at) VALUES (?,?,?,?,'pending',?,datetime('now'))`,
+        [req.user.id, cert.service_id, `Renewal: ${cert.purpose || 'Certificate Renewal'}`, 'Certificate renewal request', cert.id],
+        function(err2) {
+          if (err2) return res.status(500).json({ error: 'Failed to create renewal application' });
+          db.run(
+            `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+            [req.user.id, 'renewal_applied', 'Renewal Application Submitted', `Renewal requested for certificate #${cert.id}`, this.lastID]
+          );
+          res.json({ success: true, application_id: this.lastID });
+        }
+      );
+    }
+  );
+});
+
+// ─────────────────────────────────────────────
+// FEATURE 5: Multi-Certificate Requests
+// ─────────────────────────────────────────────
+
+// GET: List multi-application requests
+router.get('/multi-application', (req, res) => {
+  db.all(
+    `SELECT mar.*, 
+            (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id) AS total_sub,
+            (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id AND status = 'approved') AS approved_sub,
+            (SELECT COUNT(*) FROM applications WHERE multi_request_id = mar.id AND status = 'pending') AS pending_sub
+     FROM multi_application_requests mar
+     WHERE mar.citizen_id = ?
+     ORDER BY mar.created_at DESC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
+    }
+  );
+});
+
+// GET: Single multi-application detail with sub-applications
+router.get('/multi-application/:id', (req, res) => {
+  db.get(
+    `SELECT * FROM multi_application_requests WHERE id = ? AND citizen_id = ?`,
+    [req.params.id, req.user.id],
+    (err, mar) => {
+      if (err || !mar) return res.status(404).json({ error: 'Not found' });
+      db.all(
+        `SELECT a.*, s.name AS service_name FROM applications a JOIN services s ON a.service_id = s.id WHERE a.multi_request_id = ?`,
+        [mar.id],
+        (err2, subApps) => {
+          if (err2) return res.status(500).json({ error: 'Database error' });
+          res.json({ ...mar, sub_applications: subApps });
+        }
+      );
+    }
+  );
+});
+
+// POST: Submit a multi-certificate application
+router.post('/multi-application', upload.array('documents', 10), (req, res) => {
+  const { purpose, service_ids } = req.body;
+  const citizen_id = req.user.id;
+
+  let serviceIds;
+  try {
+    serviceIds = typeof service_ids === 'string' ? JSON.parse(service_ids) : service_ids;
+  } catch (e) {
+    return res.status(400).json({ error: 'Invalid service_ids format' });
+  }
+
+  if (!serviceIds || serviceIds.length < 2) {
+    return res.status(400).json({ error: 'Select at least 2 services' });
+  }
+
+  db.run(
+    `INSERT INTO multi_application_requests (citizen_id, purpose, total_services, status, created_at) VALUES (?,?,?,'pending',datetime('now'))`,
+    [citizen_id, purpose, serviceIds.length],
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Failed to create multi-application' });
+      const multiId = this.lastID;
+
+      let inserted = 0;
+      serviceIds.forEach(sid => {
+        db.run(
+          `INSERT INTO applications (citizen_id, service_id, purpose, status, multi_request_id, created_at) VALUES (?,?,?,'pending',?,datetime('now'))`,
+          [citizen_id, sid, purpose, multiId],
+          () => {
+            inserted++;
+            if (inserted === serviceIds.length) {
+              db.run(
+                `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at) VALUES (?,?,?,?,?,datetime('now'))`,
+                [citizen_id, 'multi_application_submitted', 'Multi-Application Submitted', `Applied for ${serviceIds.length} certificates: ${purpose}`, multiId]
+              );
+              res.json({ success: true, multi_request_id: multiId });
             }
-
-            // Get notifications
-            db.query(
-                'SELECT * FROM notifications WHERE user_id = ? ORDER BY sent_at DESC LIMIT 5',
-                [userId],
-                (err, notifications) => {
-                    res.json({
-                        success: true,
-                        user: userResults[0],
-                        applications: applications,
-                        notifications: notifications || []
-                    });
-                }
-            );
-        });
-    });
-});
-
-// Get all services
-router.get('/services', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    
-    db.query('SELECT * FROM services WHERE is_active = TRUE', (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching services'
-            });
-        }
-        res.json({
-            success: true,
-            services: results
-        });
-    });
-});
-
-// Submit new application
-router.post('/apply', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
-    const { service_id, application_data } = req.body;
-
-    const query = `
-        INSERT INTO applications (user_id, service_id, application_data, status) 
-        VALUES (?, ?, ?, 'Pending')
-    `;
-
-    db.run(query, [userId, service_id, JSON.stringify(application_data)], (err, result) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error submitting application',
-                error: err.message
-            });
-        }
-
-        const applicationId = result.insertId;
-
-        // Create notification
-        const notifQuery = `
-            INSERT INTO notifications (user_id, application_id, notification_type, title, message) 
-            VALUES (?, ?, 'Status Update', 'Application Submitted', 'Your application has been submitted successfully.')
-        `;
-        db.run(notifQuery, [userId, applicationId]);
-
-        res.status(201).json({
-            success: true,
-            message: 'Application submitted successfully',
-            application_id: applicationId
-        });
-    });
-});
-
-// Upload documents for application
-router.post('/upload-documents', verifyToken, isCitizen, upload.array('documents', 5), (req, res) => {
-    const db = req.app.locals.db;
-    const { application_id, document_types } = req.body;
-    const files = req.files;
-
-    if (!files || files.length === 0) {
-        return res.status(400).json({
-            success: false,
-            message: 'No files uploaded'
-        });
-    }
-
-    const documentTypes = JSON.parse(document_types);
-    const insertPromises = [];
-
-    files.forEach((file, index) => {
-        const query = `
-            INSERT INTO documents (application_id, document_type, document_name, file_path, file_size) 
-            VALUES (?, ?, ?, ?, ?)
-        `;
-        
-        insertPromises.push(
-            new Promise((resolve, reject) => {
-                db.run(
-                    query,
-                    [application_id, documentTypes[index], file.originalname, file.path, file.size],
-                    (err, result) => {
-                        if (err) reject(err);
-                        else resolve(result);
-                    }
-                );
-            })
+          }
         );
-    });
-
-    Promise.all(insertPromises)
-        .then(() => {
-            res.json({
-                success: true,
-                message: 'Documents uploaded successfully',
-                count: files.length
-            });
-        })
-        .catch(err => {
-            res.status(500).json({
-                success: false,
-                message: 'Error uploading documents',
-                error: err.message
-            });
-        });
-});
-
-// Get application details
-router.get('/application/:id', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.id;
-    const userId = req.userId;
-
-    // Get application details
-    db.query(
-        `SELECT a.*, s.service_name, s.service_type, s.description 
-         FROM applications a 
-         JOIN services s ON a.service_id = s.service_id 
-         WHERE a.application_id = ? AND a.user_id = ?`,
-        [applicationId, userId],
-        (err, applications) => {
-            if (err || !applications || applications.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Application not found'
-                });
-            }
-
-            const application = applications[0];
-
-            // Get documents for this application
-            db.query(
-                'SELECT * FROM documents WHERE application_id = ?',
-                [applicationId],
-                (err, documents) => {
-                    res.json({
-                        success: true,
-                        application: application,
-                        documents: documents || []
-                    });
-                }
-            );
-        }
-    );
-});
-
-// Get all applications for citizen
-router.get('/applications', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
-
-    const query = `
-        SELECT a.*, s.service_name, s.service_type 
-        FROM applications a 
-        JOIN services s ON a.service_id = s.service_id 
-        WHERE a.user_id = ? 
-        ORDER BY a.created_at DESC
-    `;
-
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching applications'
-            });
-        }
-        res.json({
-            success: true,
-            applications: results
-        });
-    });
-});
-
-// Get certificates for citizen
-router.get('/certificates', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
-
-    const query = `
-        SELECT c.*, s.service_name 
-        FROM certificates c 
-        JOIN services s ON c.service_id = s.service_id 
-        WHERE c.user_id = ? AND c.is_valid = TRUE 
-        ORDER BY c.issue_date DESC
-    `;
-
-    db.query(query, [userId], (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching certificates'
-            });
-        }
-        res.json({
-            success: true,
-            certificates: results
-        });
-    });
-});
-
-// Get notifications
-router.get('/notifications', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
-
-    db.query(
-        'SELECT * FROM notifications WHERE user_id = ? ORDER BY sent_at DESC',
-        [userId],
-        (err, results) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error fetching notifications'
-                });
-            }
-            res.json({
-                success: true,
-                notifications: results
-            });
-        }
-    );
-});
-
-// Mark notification as read
-router.put('/notifications/:id/read', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const notificationId = req.params.id;
-
-    db.run(
-        'UPDATE notifications SET is_read = TRUE WHERE notification_id = ?',
-        [notificationId],
-        (err, result) => {
-            if (err) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error updating notification'
-                });
-            }
-            res.json({
-                success: true,
-                message: 'Notification marked as read'
-            });
-        }
-    );
-});
-
-// Download certificate PDF for approved applications
-router.get('/certificates/download/:id', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.id;
-    const userId = req.userId;
-
-    // Verify application belongs to user and is approved
-    db.query(
-        `SELECT a.*, s.service_name, u.full_name as citizen_name, u.aadhar_number, u.address, u.village, u.district, u.state
-         FROM applications a 
-         JOIN services s ON a.service_id = s.service_id 
-         JOIN users u ON a.user_id = u.user_id
-         WHERE a.application_id = ? AND a.user_id = ? AND a.status = 'Approved'`,
-        [applicationId, userId],
-        (err, results) => {
-            if (err || results.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Application not found or not approved'
-                });
-            }
-
-            const app = results[0];
-            const PDFDocument = require('pdfkit');
-
-            try {
-                // Generate PDF in memory
-                const doc = new PDFDocument({ size: 'A4', margin: 50 });
-                const chunks = [];
-
-                doc.on('data', (chunk) => chunks.push(chunk));
-                doc.on('end', () => {
-                    const pdfBuffer = Buffer.concat(chunks);
-                    
-                    // Set headers for download
-                    res.setHeader('Content-Type', 'application/pdf');
-                    res.setHeader('Content-Disposition', `attachment; filename="Certificate_${app.application_id}.pdf"`);
-                    
-                    // Send buffer
-                    res.send(pdfBuffer);
-                });
-
-                // Create certificate content
-                doc.fontSize(24).fillColor('#2563eb').text('GRAM PANCHAYAT', { align: 'center' });
-                doc.fontSize(18).text('CERTIFICATE OF APPROVAL', { align: 'center' });
-                doc.moveDown();
-
-                // Certificate border
-                doc.rect(40, 120, doc.page.width - 80, doc.page.height - 200).stroke();
-
-                // Certificate content
-                doc.fontSize(14).fillColor('#000');
-                doc.moveDown();
-                doc.text(`Application ID: APP-${app.application_id}`, { align: 'left' });
-                doc.text(`Date: ${new Date(app.updated_at).toLocaleDateString('en-IN')}`, { align: 'left' });
-                doc.moveDown();
-
-                doc.fontSize(16).text(`${app.service_name || 'Certificate'}`, { align: 'center', underline: true });
-                doc.moveDown();
-
-                doc.fontSize(12);
-                doc.text(`This is to certify that ${app.citizen_name}`, { align: 'left' });
-                doc.text(`having Aadhar No: ${app.aadhar_number}`, { align: 'left' });
-                doc.text(`residing at ${app.address || 'N/A'}`, { align: 'left' });
-                doc.text(`${app.village || ''}, ${app.district || ''}, ${app.state || ''}`.replace(/,\s*,/g, ','), { align: 'left' });
-                doc.moveDown();
-
-                doc.text('has been approved for the above service/certificate.', { align: 'left' });
-                doc.text('This certificate is valid and issued by the Gram Panchayat office.', { align: 'left' });
-                doc.moveDown(2);
-
-                // Footer
-                doc.fontSize(10).fillColor('#666');
-                doc.text(`Issued on: ${new Date().toLocaleDateString('en-IN')}`, 400, doc.page.height - 150);
-                doc.moveDown();
-                doc.text('Authorized Signatory', 400, doc.page.height - 100);
-                doc.text('Gram Panchayat Office', 400, doc.page.height - 80);
-
-                doc.end();
-            } catch (error) {
-                console.error('Error generating PDF:', error);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error generating certificate'
-                });
-            }
-        }
-    );
-});
-
-// Download certificate (legacy endpoint)
-router.get('/certificate/:id/download', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const certificateId = req.params.id;
-    const userId = req.userId;
-
-    // Verify certificate belongs to user
-    db.query(
-        'SELECT * FROM certificates WHERE certificate_id = ? AND user_id = ?',
-        [certificateId, userId],
-        (err, results) => {
-            if (err || results.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Certificate not found'
-                });
-            }
-
-            const certificate = results[0];
-            const filePath = path.join(__dirname, '..', certificate.certificate_file_path);
-
-            // Check if file exists
-            if (!fs.existsSync(filePath)) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Certificate file not found'
-                });
-            }
-
-            // Set headers for download
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename="${certificate.certificate_number}.pdf"`);
-
-            // Send file
-            res.sendFile(filePath);
-        }
-    );
-});
-
-// Get user profile
-router.get('/profile', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
-
-    db.get('SELECT user_id, full_name, email_address, address, phone FROM users WHERE user_id = ?', [userId], (err, user) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: 'Error fetching profile' });
-        }
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-
-        res.json({
-            success: true,
-            profile: {
-                name: user.full_name,
-                email: user.email_address,
-                address: user.address,
-                phone: user.phone
-            }
-        });
-    });
-});
-
-// Update user profile
-router.put('/profile', verifyToken, isCitizen, (req, res) => {
-    const db = req.app.locals.db;
-    const userId = req.userId;
-    const { name, address, phone } = req.body;
-
-    if (!name) {
-        return res.status(400).json({ success: false, message: 'Name is required' });
+      });
     }
+  );
+});
 
-    db.run(
-        'UPDATE users SET full_name = ?, address = ?, phone = ?, updated_at = datetime("now") WHERE user_id = ?',
-        [name, address || '', phone || '', userId],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: 'Error updating profile' });
-            }
+// ─────────────────────────────────────────────
+// FEATURE 6: Citizen Service Timeline
+// ─────────────────────────────────────────────
+router.get('/timeline', (req, res) => {
+  db.all(
+    `SELECT cte.*, 
+            CASE cte.event_type
+              WHEN 'application_submitted' THEN 'submitted'
+              WHEN 'application_approved' THEN 'approved'
+              WHEN 'application_rejected' THEN 'rejected'
+              WHEN 'certificate_issued' THEN 'certificate'
+              WHEN 'correction_requested' THEN 'correction'
+              WHEN 'correction_resubmitted' THEN 'resubmitted'
+              WHEN 'renewal_applied' THEN 'renewal'
+              WHEN 'multi_application_submitted' THEN 'multi'
+              ELSE 'info'
+            END AS event_category
+     FROM citizen_timeline_events cte
+     WHERE cte.citizen_id = ?
+     ORDER BY cte.created_at DESC
+     LIMIT 100`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.json(rows);
+    }
+  );
+});
 
-            res.json({
-                success: true,
-                message: 'Profile updated successfully',
-                profile: {
-                    name,
-                    address,
-                    phone
-                }
-            });
-        }
-    );
+// ─────────────────────────────────────────────
+// EXISTING: Services list
+// ─────────────────────────────────────────────
+router.get('/services', (req, res) => {
+  db.all(`SELECT * FROM services WHERE is_active = 1 ORDER BY name`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(rows);
+  });
 });
 
 module.exports = router;
-
-

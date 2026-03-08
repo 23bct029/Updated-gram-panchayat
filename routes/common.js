@@ -1,119 +1,101 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../database/db');
+const path = require('path');
 
-// Get all active services (public)
-router.get('/services', (req, res) => {
-    const db = req.app.locals.db;
-    
-    db.query('SELECT * FROM services WHERE is_active = TRUE ORDER BY service_name', (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching services'
-            });
-        }
-        res.json({
-            success: true,
-            services: results
-        });
-    });
+// ─────────────────────────────────────────────
+// PUBLIC: Certificate Verification Page
+// Feature 3 & 4: QR Code leads to this page
+// ─────────────────────────────────────────────
+
+// Public verification landing page
+router.get('/verify/:hash', (req, res) => {
+  res.sendFile(path.join(__dirname, '../views/verify.html'));
 });
 
-// Get all active schemes (public)
-router.get('/schemes', (req, res) => {
-    const db = req.app.locals.db;
-    
-    db.query('SELECT * FROM schemes WHERE is_active = TRUE ORDER BY scheme_name', (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching schemes'
-            });
-        }
-        res.json({
-            success: true,
-            schemes: results
-        });
-    });
+// API: Verify by certificate ID (public)
+router.get('/api/verify/certificate/:id', (req, res) => {
+  db.get(
+    `SELECT c.id, c.issued_at, c.expiry_date, c.verification_hash, c.status,
+            s.name AS service_name,
+            u.name AS citizen_name,
+            a.purpose
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     WHERE c.id = ?`,
+    [req.params.id],
+    (err, cert) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (!cert) return res.status(404).json({ valid: false, message: 'Certificate not found' });
+
+      const isExpired = cert.expiry_date && new Date(cert.expiry_date) < new Date();
+      const isActive = cert.status === 'active';
+
+      // Log verification
+      db.run(
+        `INSERT INTO certificate_verification_logs (certificate_id, verification_method, created_at) VALUES (?,?,datetime('now'))`,
+        [cert.id, 'public_api']
+      );
+
+      res.json({
+        valid: isActive && !isExpired,
+        certificate: {
+          id: cert.id,
+          service_name: cert.service_name,
+          citizen_name: cert.citizen_name,
+          purpose: cert.purpose,
+          issued_at: cert.issued_at,
+          expiry_date: cert.expiry_date,
+          status: isExpired ? 'expired' : cert.status
+        },
+        message: isExpired ? 'Certificate has expired' : (isActive ? 'Certificate is valid and authentic' : 'Certificate is not active')
+      });
+    }
+  );
 });
 
-// Get active announcements (public)
-router.get('/announcements', (req, res) => {
-    const db = req.app.locals.db;
-    
-    const query = `
-        SELECT * FROM announcements 
-        WHERE is_active = TRUE 
-        AND (expiry_date IS NULL OR expiry_date >= DATE('now'))
-        ORDER BY published_on DESC 
-        LIMIT 10
-    `;
+// API: Verify by hash (QR code URL verification)
+router.get('/api/verify/hash/:hash', (req, res) => {
+  db.get(
+    `SELECT c.id, c.issued_at, c.expiry_date, c.verification_hash, c.status,
+            s.name AS service_name,
+            u.name AS citizen_name,
+            a.purpose
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.id
+     JOIN services s ON a.service_id = s.id
+     JOIN users u ON a.citizen_id = u.id
+     WHERE c.verification_hash = ?`,
+    [req.params.hash],
+    (err, cert) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (!cert) return res.status(404).json({ valid: false, message: 'Certificate not found or invalid hash' });
 
-    db.query(query, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching announcements'
-            });
-        }
-        res.json({
-            success: true,
-            announcements: results
-        });
-    });
-});
+      const isExpired = cert.expiry_date && new Date(cert.expiry_date) < new Date();
+      const isActive = cert.status === 'active';
 
-// Get panchayat information (public)
-router.get('/panchayat-info', (req, res) => {
-    const db = req.app.locals.db;
-    
-    db.query('SELECT * FROM panchayat_info LIMIT 1', (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Error fetching panchayat information'
-            });
-        }
-        res.json({
-            success: true,
-            info: results[0] || null
-        });
-    });
-});
+      db.run(
+        `INSERT INTO certificate_verification_logs (certificate_id, verification_method, created_at) VALUES (?,?,datetime('now'))`,
+        [cert.id, 'qr_scan']
+      );
 
-// Track application by ID (public - no auth required)
-router.get('/track/:applicationId', (req, res) => {
-    const db = req.app.locals.db;
-    const applicationId = req.params.applicationId;
-
-    const query = `
-        SELECT a.application_id, a.status, a.created_at, a.updated_at, s.service_name 
-        FROM applications a 
-        JOIN services s ON a.service_id = s.service_id 
-        WHERE a.application_id = ?
-    `;
-
-    db.query(query, [applicationId], (err, results) => {
-        if (err || results.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Application not found'
-            });
-        }
-
-        // Get status history
-        db.query(
-            'SELECT new_status, remarks, changed_at FROM status_history WHERE application_id = ? ORDER BY changed_at',
-            [applicationId],
-            (err, history) => {
-                res.json({
-                    success: true,
-                    application: results[0],
-                    history: history || []
-                });
-            }
-        );
-    });
+      res.json({
+        valid: isActive && !isExpired,
+        certificate: {
+          id: cert.id,
+          service_name: cert.service_name,
+          citizen_name: cert.citizen_name,
+          purpose: cert.purpose,
+          issued_at: cert.issued_at,
+          expiry_date: cert.expiry_date,
+          status: isExpired ? 'expired' : cert.status
+        },
+        message: isExpired ? 'Certificate has expired' : (isActive ? 'Certificate is valid and authentic' : 'Certificate is not active')
+      });
+    }
+  );
 });
 
 module.exports = router;
