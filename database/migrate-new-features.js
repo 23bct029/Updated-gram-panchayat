@@ -15,12 +15,12 @@ db.serialize(() => {
   // ── Feature 1: Application Corrections ─────────────
   db.run(`CREATE TABLE IF NOT EXISTS application_corrections (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    application_id INTEGER NOT NULL REFERENCES applications(id),
-    requested_by INTEGER REFERENCES users(id),
+    application_id INTEGER NOT NULL REFERENCES applications(application_id),
+    requested_by INTEGER REFERENCES staff(staff_id),
     correction_reason TEXT NOT NULL,
     required_documents TEXT,
     correction_notes TEXT,
-    status TEXT DEFAULT 'pending',     -- pending | resubmitted | approved
+    status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT (datetime('now')),
     resubmitted_at DATETIME,
     resolved_at DATETIME
@@ -38,9 +38,9 @@ db.serialize(() => {
   db.run(`ALTER TABLE certificates ADD COLUMN verification_hash TEXT UNIQUE`, () => {});
   db.run(`CREATE TABLE IF NOT EXISTS certificate_verification_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    certificate_id INTEGER NOT NULL REFERENCES certificates(id),
-    verified_by INTEGER REFERENCES users(id),
-    verification_method TEXT DEFAULT 'public',   -- citizen_view | qr_scan | public_api
+    certificate_id INTEGER NOT NULL REFERENCES certificates(certificate_id),
+    verified_by INTEGER REFERENCES users(user_id),
+    verification_method TEXT DEFAULT 'public',
     ip_address TEXT,
     created_at DATETIME DEFAULT (datetime('now'))
   )`, err => logResult('certificate_verification_logs', err));
@@ -48,7 +48,7 @@ db.serialize(() => {
   // ── Feature 5: Multi-Application Requests ──────────
   db.run(`CREATE TABLE IF NOT EXISTS multi_application_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    citizen_id INTEGER NOT NULL REFERENCES users(id),
+    citizen_id INTEGER NOT NULL REFERENCES users(user_id),
     purpose TEXT NOT NULL,
     total_services INTEGER DEFAULT 0,
     status TEXT DEFAULT 'pending',
@@ -61,11 +61,11 @@ db.serialize(() => {
   // ── Feature 6: Citizen Timeline Events ─────────────
   db.run(`CREATE TABLE IF NOT EXISTS citizen_timeline_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    citizen_id INTEGER NOT NULL REFERENCES users(id),
-    event_type TEXT NOT NULL,          -- application_submitted | approved | rejected | certificate_issued | correction_requested | correction_resubmitted | renewal_applied | multi_application_submitted
+    citizen_id INTEGER NOT NULL REFERENCES users(user_id),
+    event_type TEXT NOT NULL,
     event_title TEXT NOT NULL,
     event_description TEXT,
-    reference_id INTEGER,              -- application_id or certificate_id
+    reference_id INTEGER,
     created_at DATETIME DEFAULT (datetime('now'))
   )`, err => logResult('citizen_timeline_events', err));
 
@@ -82,7 +82,7 @@ db.serialize(() => {
   // ── Feature 8: Service Usage Stats ─────────────────
   db.run(`CREATE TABLE IF NOT EXISTS service_usage_stats (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    service_id INTEGER REFERENCES services(id),
+    service_id INTEGER REFERENCES services(service_id),
     stat_date DATE DEFAULT (date('now')),
     request_count INTEGER DEFAULT 0,
     approved_count INTEGER DEFAULT 0
@@ -91,7 +91,7 @@ db.serialize(() => {
   // ── Feature 9 & 10: Staff Workload & Assignments ───
   db.run(`CREATE TABLE IF NOT EXISTS staff_workload (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    staff_id INTEGER UNIQUE REFERENCES users(id),
+    staff_id INTEGER UNIQUE REFERENCES staff(staff_id),
     pending_count INTEGER DEFAULT 0,
     approved_count INTEGER DEFAULT 0,
     updated_at DATETIME DEFAULT (datetime('now'))
@@ -99,15 +99,15 @@ db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS staff_assignments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    staff_id INTEGER REFERENCES users(id),
-    application_id INTEGER UNIQUE REFERENCES applications(id),
+    staff_id INTEGER REFERENCES staff(staff_id),
+    application_id INTEGER UNIQUE REFERENCES applications(application_id),
     assigned_at DATETIME DEFAULT (datetime('now')),
     UNIQUE(application_id)
   )`, err => logResult('staff_assignments', err));
 
   // ── Seed staff_workload for existing staff ──────────
   db.run(`INSERT OR IGNORE INTO staff_workload (staff_id, pending_count, approved_count)
-          SELECT id, 0, 0 FROM users WHERE role = 'staff'`,
+          SELECT staff_id, 0, 0 FROM staff`,
     err => {
       if (!err) console.log('✅ Seeded staff_workload for existing staff');
     }

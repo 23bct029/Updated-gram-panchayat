@@ -266,6 +266,7 @@
 
                 if (data.success) {
                     // Store token and user data
+                    localStorage.setItem('token', data.token);
                     localStorage.setItem('authToken', data.token);
                     localStorage.setItem('userData', JSON.stringify(data.user));
                     localStorage.setItem('userType', data.userType);

@@ -74,6 +74,77 @@ const migrateDatabase = (db) => {
             `ALTER TABLE users ADD COLUMN village TEXT`,
             `ALTER TABLE users ADD COLUMN block TEXT`,
             `ALTER TABLE users ADD COLUMN district TEXT`,
+            // New feature tables (safe to run repeatedly - CREATE IF NOT EXISTS)
+            `CREATE TABLE IF NOT EXISTS application_corrections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                application_id INTEGER NOT NULL REFERENCES applications(application_id),
+                requested_by INTEGER REFERENCES staff(staff_id),
+                correction_reason TEXT NOT NULL,
+                required_documents TEXT,
+                correction_notes TEXT,
+                status TEXT DEFAULT 'pending',
+                created_at DATETIME DEFAULT (datetime('now')),
+                resubmitted_at DATETIME,
+                resolved_at DATETIME
+            )`,
+            `ALTER TABLE certificates ADD COLUMN expiry_date DATE`,
+            `ALTER TABLE certificates ADD COLUMN status TEXT DEFAULT 'active'`,
+            `ALTER TABLE certificates ADD COLUMN verification_hash TEXT`,
+            `ALTER TABLE applications ADD COLUMN parent_certificate_id INTEGER`,
+            `ALTER TABLE applications ADD COLUMN updated_at DATETIME`,
+            `CREATE TABLE IF NOT EXISTS certificate_verification_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                certificate_id INTEGER NOT NULL REFERENCES certificates(certificate_id),
+                verified_by INTEGER REFERENCES users(user_id),
+                verification_method TEXT DEFAULT 'public',
+                ip_address TEXT,
+                created_at DATETIME DEFAULT (datetime('now'))
+            )`,
+            `CREATE TABLE IF NOT EXISTS multi_application_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                citizen_id INTEGER NOT NULL REFERENCES users(user_id),
+                purpose TEXT NOT NULL,
+                total_services INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'pending',
+                created_at DATETIME DEFAULT (datetime('now'))
+            )`,
+            `ALTER TABLE applications ADD COLUMN multi_request_id INTEGER`,
+            `CREATE TABLE IF NOT EXISTS citizen_timeline_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                citizen_id INTEGER NOT NULL REFERENCES users(user_id),
+                event_type TEXT NOT NULL,
+                event_title TEXT NOT NULL,
+                event_description TEXT,
+                reference_id INTEGER,
+                created_at DATETIME DEFAULT (datetime('now'))
+            )`,
+            `CREATE TABLE IF NOT EXISTS village_demographics_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                data TEXT NOT NULL,
+                created_at DATETIME DEFAULT (datetime('now'))
+            )`,
+            `ALTER TABLE users ADD COLUMN gender TEXT`,
+            `ALTER TABLE users ADD COLUMN dob DATE`,
+            `CREATE TABLE IF NOT EXISTS service_usage_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                service_id INTEGER REFERENCES services(service_id),
+                stat_date DATE DEFAULT (date('now')),
+                request_count INTEGER DEFAULT 0,
+                approved_count INTEGER DEFAULT 0
+            )`,
+            `CREATE TABLE IF NOT EXISTS staff_workload (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                staff_id INTEGER UNIQUE REFERENCES staff(staff_id),
+                pending_count INTEGER DEFAULT 0,
+                approved_count INTEGER DEFAULT 0,
+                updated_at DATETIME DEFAULT (datetime('now'))
+            )`,
+            `CREATE TABLE IF NOT EXISTS staff_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                staff_id INTEGER REFERENCES staff(staff_id),
+                application_id INTEGER UNIQUE REFERENCES applications(application_id),
+                assigned_at DATETIME DEFAULT (datetime('now'))
+            )`,
         ];
         let done = 0;
         const runNext = () => {
@@ -83,7 +154,7 @@ const migrateDatabase = (db) => {
                 return;
             }
             db.db.run(migrations[done], (err) => {
-                if (err && !err.message.includes('duplicate column')) {
+                if (err && !err.message.includes('duplicate column') && !err.message.includes('already exists')) {
                     console.log(`Migration note: ${err.message}`);
                 }
                 done++;
@@ -101,44 +172,49 @@ const seedDefaultAccounts = (db) => {
             const staffHash = await bcrypt.hash('staff123', 10);
             const citizenHash = await bcrypt.hash('citizen123', 10);
 
-            db.db.run(`DELETE FROM admin WHERE email = 'admin@panchayat.gov'`, () => {});
-            db.db.run(`DELETE FROM staff WHERE email = 'staff@panchayat.gov'`, () => {});
-
-            const seeds = [
-                {
-                    del: `DELETE FROM admin WHERE email = 'admin@example.com'`,
-                    insert: `INSERT INTO admin (username, email, password_hash, full_name, role) VALUES ('admin', 'admin@example.com', ?, 'Admin User', 'super_admin')`,
-                    params: [adminHash], label: 'Admin', extraDel: null
-                },
-                {
-                    del: `DELETE FROM users WHERE email = 'citizen@example.com'`,
-                    insert: `INSERT INTO users (full_name, email, phone, aadhar_number, password_hash, address, village, block, district, state, pincode) VALUES ('Demo Citizen', 'citizen@example.com', '9876543210', '123456789012', ?, '123 Main St', 'Demo Village', 'Demo Block', 'Demo District', 'Rajasthan', '12345')`,
-                    params: [citizenHash], label: 'Citizen',
-                    extraDel: `DELETE FROM users WHERE aadhar_number = '123456789012'`
-                },
-                {
-                    del: `DELETE FROM staff WHERE email = 'staff@example.com'`,
-                    insert: `INSERT INTO staff (full_name, email, phone, password_hash, role, employee_id, department, panchayat_name) VALUES ('Demo Staff', 'staff@example.com', '9876543211', ?, 'officer', 'EMP001', 'Administration', 'Demo Panchayat')`,
-                    params: [staffHash], label: 'Staff',
-                    extraDel: `DELETE FROM staff WHERE employee_id = 'EMP001'`
-                }
-            ];
-
-            const processSeed = (seed) => new Promise((res) => {
-                db.db.run(seed.del, () => {
-                    const doInsert = () => {
-                        db.db.run(seed.insert, seed.params, (err) => {
-                            if (err) console.error(`Error seeding ${seed.label}:`, err.message);
-                            else console.log(`✓ ${seed.label} account seeded`);
-                            res();
-                        });
-                    };
-                    if (seed.extraDel) db.db.run(seed.extraDel, () => doInsert());
-                    else doInsert();
-                });
+            const runSerial = (statements) => new Promise((res) => {
+                let i = 0;
+                const next = () => {
+                    if (i >= statements.length) return res();
+                    const [sql, params, label] = statements[i++];
+                    db.db.run(sql, params || [], (err) => {
+                        if (err && label) console.log(`Seed note (${label}): ${err.message}`);
+                        next();
+                    });
+                };
+                next();
             });
 
-            for (const seed of seeds) await processSeed(seed);
+            // Clean up any old/conflicting seed data first
+            await runSerial([
+                [`DELETE FROM admin WHERE email = 'admin@example.com'`, [], null],
+                [`DELETE FROM admin WHERE email = 'admin@panchayat.gov'`, [], null],
+                [`DELETE FROM users WHERE email = 'citizen@example.com'`, [], null],
+                [`DELETE FROM users WHERE aadhar_number = '123456789012'`, [], null],
+                [`DELETE FROM staff WHERE email = 'staff@example.com'`, [], null],
+                [`DELETE FROM staff WHERE employee_id = 'EMP001'`, [], null],
+                [`DELETE FROM staff WHERE email = 'staff@panchayat.gov'`, [], null],
+            ]);
+
+            // Insert fresh seed data
+            await runSerial([
+                [
+                    `INSERT INTO admin (username, email, password_hash, full_name, role) VALUES ('admin', 'admin@example.com', ?, 'Admin User', 'super_admin')`,
+                    [adminHash], 'Admin'
+                ],
+                [
+                    `INSERT INTO users (full_name, email, phone, aadhar_number, password_hash, address, village, block, district, state, pincode) VALUES ('Demo Citizen', 'citizen@example.com', '9876543210', '123456789012', ?, '123 Main St', 'Demo Village', 'Demo Block', 'Demo District', 'Rajasthan', '12345')`,
+                    [citizenHash], 'Citizen'
+                ],
+                [
+                    `INSERT INTO staff (full_name, email, phone, password_hash, role, employee_id, department, panchayat_name) VALUES ('Demo Staff', 'staff@example.com', '9876543211', ?, 'officer', 'EMP001', 'Administration', 'Demo Panchayat')`,
+                    [staffHash], 'Staff'
+                ],
+            ]);
+
+            console.log('✓ Admin account seeded');
+            console.log('✓ Citizen account seeded');
+            console.log('✓ Staff account seeded');
             resolve();
         } catch (error) {
             console.error('Error seeding accounts:', error);
@@ -198,6 +274,7 @@ app.use('/api/admin', adminRoutes);
 
 // ── HTML Pages ────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
+app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'public', 'favicon.svg')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'views', 'login.html')));
 app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'views', 'register.html')));
 app.get('/citizen/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'views', 'citizen', 'dashboard.html')));

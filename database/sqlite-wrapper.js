@@ -48,7 +48,7 @@ class SQLiteDatabase {
         });
     }
 
-    // For INSERT/UPDATE/DELETE
+    // Execute mutation (INSERT, UPDATE, DELETE)
     run(sql, params, callback) {
         if (typeof params === 'function') {
             callback = params;
@@ -58,13 +58,39 @@ class SQLiteDatabase {
         this.db.run(sql, params, function(err) {
             if (callback) {
                 if (err) {
-                    callback(err, null);
+                    callback.call({ lastID: null, changes: 0 }, err, null);
                 } else {
-                    callback(null, { 
-                        insertId: this.lastID, 
-                        affectedRows: this.changes 
-                    });
+                    const result = { insertId: this.lastID, affectedRows: this.changes, lastID: this.lastID };
+                    callback.call(result, null, result);
                 }
+            }
+        });
+    }
+
+    // Alias for single row fetch (used in admin/staff routes)
+    get(sql, params, callback) {
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+        this.db.get(sql, params, (err, row) => {
+            if (callback) {
+                if (err) callback(err, null);
+                else callback(null, row || null);
+            }
+        });
+    }
+
+    // Alias for multi-row fetch (used in admin/staff routes)
+    all(sql, params, callback) {
+        if (typeof params === 'function') {
+            callback = params;
+            params = [];
+        }
+        this.db.all(sql, params, (err, rows) => {
+            if (callback) {
+                if (err) callback(err, null);
+                else callback(null, rows || []);
             }
         });
     }
