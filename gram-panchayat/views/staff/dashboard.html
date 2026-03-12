@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Staff Dashboard – Gram Panchayat</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,sans-serif;background:#f1f5f9;color:#1e293b;display:flex;min-height:100vh}
+    .sidebar{width:260px;background:#1e293b;min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100}
+    .sidebar-header{padding:24px 20px;border-bottom:1px solid #334155}
+    .sidebar-header h2{color:#fff;font-size:1.1rem;font-weight:700}
+    .sidebar-header p{color:#94a3b8;font-size:.8rem;margin-top:4px}
+    .sidebar nav{flex:1;padding:12px 0}
+    .sidebar nav li{list-style:none}
+    .sidebar nav li a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:#94a3b8;text-decoration:none;font-size:.9rem;transition:all .2s;cursor:pointer}
+    .sidebar nav li a:hover,.sidebar nav li a.active{background:#2563eb;color:#fff;border-right:3px solid #60a5fa}
+    .sidebar nav li a i{width:18px;text-align:center}
+    .sidebar-footer{padding:16px 20px;border-top:1px solid #334155}
+    .sidebar-footer a{color:#ef4444;text-decoration:none;display:flex;align-items:center;gap:8px;font-size:.9rem}
+    .main{margin-left:260px;flex:1;padding:24px}
+    .section{display:none}
+    .section.active{display:block}
+    .page-header{margin-bottom:24px}
+    .page-header h1{font-size:1.6rem;font-weight:700}
+    .page-header p{color:#64748b;margin-top:4px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+    .stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-left:4px solid #2563eb}
+    .stat-card .stat-value{font-size:2rem;font-weight:700;color:#2563eb}
+    .stat-card .stat-label{font-size:.85rem;color:#64748b;margin-top:4px}
+    .card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;margin-bottom:24px}
+    .card-header{padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+    .card-header h3{font-size:1rem;font-weight:600}
+    .applications-table{width:100%;border-collapse:collapse}
+    .applications-table th,.applications-table td{padding:12px 16px;text-align:left;font-size:.875rem;border-bottom:1px solid #f1f5f9}
+    .applications-table th{background:#f8fafc;font-weight:600;color:#475569}
+    .applications-table tr:hover{background:#f8fafc}
+    .badge{padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;display:inline-block}
+    .badge-pending{background:#fef3c7;color:#92400e}
+    .badge-approved{background:#d1fae5;color:#065f46}
+    .badge-rejected{background:#fee2e2;color:#991b1b}
+    .badge-correction{background:#e0e7ff;color:#3730a3}
+    .badge-high{background:#fee2e2;color:#991b1b}
+    .badge-medium{background:#fef3c7;color:#92400e}
+    .badge-low{background:#d1fae5;color:#065f46}
+    .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.875rem;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all .2s;text-decoration:none}
+    .btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}
+    .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+    .btn-warning{background:#f59e0b;color:#fff}.btn-warning:hover{background:#d97706}
+    .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+    .btn-outline{background:#fff;border:1px solid #e2e8f0;color:#475569}.btn-outline:hover{background:#f8fafc}
+    .btn-sm{padding:5px 10px;font-size:.8rem}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:#fff;border-radius:16px;padding:28px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto}
+    .modal h3{font-size:1.2rem;font-weight:700;margin-bottom:16px}
+    .form-group{margin-bottom:16px}
+    .form-group label{display:block;font-size:.875rem;font-weight:500;margin-bottom:6px;color:#374151}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.875rem;outline:none}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#2563eb}
+    .form-group textarea{resize:vertical;min-height:80px}
+    .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+    .loading{text-align:center;padding:40px;color:#94a3b8}
+    .loading i{font-size:2rem;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-state{text-align:center;padding:48px 24px;color:#94a3b8}
+    .empty-state i{font-size:3rem;margin-bottom:12px}
+    /* Queue card */
+    .queue-highlight{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:12px;padding:20px;margin-bottom:20px}
+    .queue-highlight h3{color:#1d4ed8;margin-bottom:4px}
+    .queue-highlight p{color:#3b82f6;font-size:.85rem}
+    /* Workload bars */
+    .workload-bar-wrap{margin-top:4px}
+    .workload-bar{height:8px;border-radius:4px;background:#e2e8f0;overflow:hidden}
+    .workload-bar-fill{height:100%;border-radius:4px;background:#2563eb;transition:width .5s}
+    .staff-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f5f9}
+    .staff-avatar{width:40px;height:40px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>🏛️ Gram Panchayat</h2>
+    <p>Staff Portal</p>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</a></li>
+      <li><a href="#" onclick="showSection('pending')"><i class="fas fa-list-alt"></i> Pending Applications</a></li>
+      <li><a href="#" onclick="showSection('verify')"><i class="fas fa-check-double"></i> Verify Documents</a></li>
+      <li><a href="#" onclick="showSection('staff-corrections')"><i class="fas fa-edit"></i> Correction Requests</a></li>
+      <li><a href="#" onclick="showSection('my-workload')"><i class="fas fa-tasks"></i> My Workload</a></li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="section active">
+    <div class="page-header">
+      <h1>Staff Dashboard</h1>
+      <p>Welcome back, <span id="staff-name">Staff</span></p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="s-pending">–</div><div class="stat-label">Pending Applications</div></div>
+      <div class="stat-card" style="border-color:#10b981"><div class="stat-value" style="color:#10b981" id="s-approved">–</div><div class="stat-label">Approved Today</div></div>
+      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b" id="s-corrections">–</div><div class="stat-label">Pending Corrections</div></div>
+    </div>
+
+    <!-- Feature 9: Queue widget on dashboard -->
+    <div class="queue-highlight">
+      <h3><i class="fas fa-inbox"></i> Application Queue</h3>
+      <p>Pick the next application from the fair queue</p>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="getNextInQueue()"><i class="fas fa-forward"></i> Get Next in Queue</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Recent Applications</h3></div>
+      <div id="dash-recent"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    </div>
+  </section>
+
+  <!-- PENDING APPLICATIONS (Feature 9: priority queue) -->
+  <section id="pending" class="section">
+    <div class="page-header">
+      <h1>Pending Applications</h1>
+      <p>Applications sorted by waiting time (oldest first)</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>Queue</h3>
+        <button class="btn btn-outline btn-sm" onclick="loadPendingApps()"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+      <div id="pending-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    </div>
+  </section>
+
+  <!-- VERIFY DOCUMENTS (Feature 1: correction button added) -->
+  <section id="verify" class="section">
+    <div class="page-header">
+      <h1>Verify Documents</h1>
+      <p>Review application details and take action</p>
+    </div>
+    <div id="verify-content">
+      <div class="empty-state"><i class="fas fa-search"></i><p>Select an application from Pending Applications to verify.</p></div>
+    </div>
+  </section>
+
+  <!-- FEATURE 1: CORRECTION REQUESTS (Staff side) -->
+  <section id="staff-corrections" class="section">
+    <div class="page-header">
+      <h1>Correction Requests</h1>
+      <p>Citizen resubmissions awaiting your review</p>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Resubmitted Applications</h3><button class="btn btn-outline btn-sm" onclick="loadStaffCorrections()"><i class="fas fa-sync"></i> Refresh</button></div>
+      <div id="staff-corrections-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    </div>
+  </section>
+
+  <!-- FEATURE 10: MY WORKLOAD -->
+  <section id="my-workload" class="section">
+    <div class="page-header">
+      <h1>My Workload</h1>
+      <p>Your performance and assignment statistics</p>
+    </div>
+    <div id="workload-content"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+  </section>
+
+</main>
+
+<!-- APPROVE MODAL -->
+<div class="modal-overlay" id="approve-modal">
+  <div class="modal">
+    <h3><i class="fas fa-check-circle" style="color:#10b981"></i> Approve Application</h3>
+    <input type="hidden" id="approve-app-id"/>
+    <div class="form-group"><label>Remarks (optional)</label><textarea id="approve-remarks" placeholder="Enter any remarks for the citizen..."></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('approve-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="approveApplication()"><i class="fas fa-check"></i> Approve & Issue Certificate</button>
+    </div>
+  </div>
+</div>
+
+<!-- REJECT MODAL -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <h3><i class="fas fa-times-circle" style="color:#ef4444"></i> Reject Application</h3>
+    <input type="hidden" id="reject-app-id"/>
+    <div class="form-group"><label>Rejection Reason <span style="color:red">*</span></label><textarea id="reject-remarks" placeholder="Please provide a clear reason..."></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('reject-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="rejectApplication()"><i class="fas fa-times"></i> Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- CORRECTION REQUEST MODAL (Feature 1) -->
+<div class="modal-overlay" id="correction-modal">
+  <div class="modal">
+    <h3><i class="fas fa-edit" style="color:#f59e0b"></i> Request Correction</h3>
+    <input type="hidden" id="correction-app-id"/>
+    <div class="form-group"><label>Correction Reason <span style="color:red">*</span></label><textarea id="correction-reason" placeholder="What needs to be corrected?"></textarea></div>
+    <div class="form-group"><label>Required Documents</label><input type="text" id="correction-docs-required" placeholder="e.g. Income proof, Updated address proof"/></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('correction-modal')">Cancel</button>
+      <button class="btn btn-warning" onclick="submitCorrectionRequest()"><i class="fas fa-paper-plane"></i> Send Request</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+const userType = localStorage.getItem('userType');
+if (!token) { window.location.href = '/'; }
+else if (userType && userType !== 'staff') { window.location.href = '/' + userType + '/dashboard'; }
+
+function authHeaders() { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
+async function apiFetch(url, opts = {}) {
+  try {
+    const res = await fetch(url, { headers: authHeaders(), ...opts });
+    if (res.status === 401 || res.status === 403) { logout(); return null; }
+    return await res.json();
+  } catch(e) { return null; }
+}
+function logout() { localStorage.removeItem('token'); localStorage.removeItem('authToken'); localStorage.removeItem('userType'); window.location.href = '/'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  const loaders = {
+    pending: loadPendingApps,
+    'staff-corrections': loadStaffCorrections,
+    'my-workload': loadMyWorkload,
+  };
+  if (loaders[name]) loaders[name]();
+}
+
+window.onload = async () => {
+  try {
+    const p = JSON.parse(atob(token.split('.')[1]));
+    document.getElementById('staff-name').textContent = p.name || 'Staff';
+  } catch(e) {}
+  loadDashboard();
+};
+
+async function loadDashboard() {
+  const [pending, corrections] = await Promise.all([
+    apiFetch('/api/staff/applications/pending'),
+    apiFetch('/api/staff/corrections/pending')
+  ]);
+  document.getElementById('s-pending').textContent = (pending || []).length;
+  document.getElementById('s-corrections').textContent = (corrections || []).length;
+  // Count approved today from pending list - use all apps for approved today
+  const all = await apiFetch('/api/staff/applications?status=approved');
+  const today = new Date().toDateString();
+  const approvedToday = (all || []).filter(a => new Date(a.updated_at).toDateString() === today).length;
+  document.getElementById('s-approved').textContent = approvedToday;
+
+  // Recent
+  const recent = (pending || []).slice(0, 5);
+  document.getElementById('dash-recent').innerHTML = recent.length ? buildAppTable(recent, false) :
+    '<div class="empty-state"><i class="fas fa-inbox"></i><p>No pending applications.</p></div>';
+}
+
+// ── PENDING (Feature 9: Queue) ─────────────────
+async function loadPendingApps() {
+  const apps = await apiFetch('/api/staff/applications/pending');
+  const el = document.getElementById('pending-list');
+  if (!apps || apps.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:#10b981;font-size:2.5rem"></i><p style="margin-top:12px">No pending applications!</p></div>';
+    return;
+  }
+  el.innerHTML = buildAppTable(apps, true);
+}
+
+function buildAppTable(apps, showActions) {
+  return `<table class="applications-table">
+    <thead><tr>
+      <th>Priority</th><th>Citizen</th><th>Service</th><th>Waiting</th><th>Submitted</th>
+      ${showActions ? '<th>Actions</th>' : ''}
+    </tr></thead>
+    <tbody>${apps.map(a => `
+      <tr>
+        <td><span class="badge badge-${a.priority||'low'}">${(a.priority||'low').toUpperCase()}</span></td>
+        <td>${a.citizen_name}</td>
+        <td>${a.service_name}</td>
+        <td>${a.waiting_days || 0} days</td>
+        <td>${formatDate(a.created_at)}</td>
+        ${showActions ? `<td><button class="btn btn-outline btn-sm" onclick="openVerify(${a.id})"><i class="fas fa-eye"></i> Review</button></td>` : ''}
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ── VERIFY (Feature 1: correction button) ─────
+async function openVerify(appId) {
+  showSectionById('verify');
+  const app = await apiFetch(`/api/staff/applications/${appId}`);
+  if (!app) return;
+
+  // Fetch documents
+  const docData = await apiFetch(`/api/staff/applications/${appId}/documents`);
+  const docs = (docData && docData.documents) || [];
+
+  const docsHtml = docs.length > 0 ? `
+    <div style="margin-top:18px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+      <h4 style="font-size:.875rem;font-weight:700;margin-bottom:12px;color:#1e293b;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-paperclip" style="color:#2563eb"></i> Uploaded Documents (${docs.length})
+      </h4>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        ${docs.map(doc => `
+          <button onclick="previewDoc('${doc.url}','${doc.label}','${doc.type}')"
+            style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.825rem;font-weight:600;color:#2563eb;transition:.2s"
+            onmouseover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'"
+            onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#fff'">
+            <i class="fas fa-${doc.type === 'image' ? 'image' : 'file-pdf'}" style="font-size:.9rem"></i>
+            Preview ${doc.label}
+          </button>`).join('')}
+      </div>
+    </div>` : `
+    <div style="margin-top:14px;padding:12px 14px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:.825rem;color:#92400e">
+      <i class="fas fa-info-circle"></i> No documents were uploaded with this application.
+    </div>`;
+
+  document.getElementById('verify-content').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h3>Application #${app.id} – ${app.service_name}</h3>
+        <span class="badge badge-${app.status}">${app.status}</span>
+      </div>
+      <div style="padding:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div><strong>Citizen:</strong> ${app.citizen_name}</div>
+          <div><strong>Email:</strong> ${app.email}</div>
+          <div><strong>Phone:</strong> ${app.phone || '–'}</div>
+          <div><strong>Address:</strong> ${app.address || '–'}</div>
+          <div><strong>Purpose:</strong> ${app.purpose || '–'}</div>
+          <div><strong>Submitted:</strong> ${formatDate(app.created_at)}</div>
+        </div>
+        <p><strong>Details:</strong> ${app.details || '–'}</p>
+        ${docsHtml}
+        <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+          <button class="btn btn-success" onclick="openApproveModal(${app.id})"><i class="fas fa-check"></i> Approve</button>
+          <button class="btn btn-warning" onclick="openCorrectionModal(${app.id})"><i class="fas fa-edit"></i> Request Correction</button>
+          <button class="btn btn-danger" onclick="openRejectModal(${app.id})"><i class="fas fa-times"></i> Reject</button>
+          <button class="btn btn-outline" onclick="showSectionById('pending')"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+      </div>
+    </div>`;
+}
+}
+
+function showSectionById(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+}
+
+function openApproveModal(id) { document.getElementById('approve-app-id').value = id; openModal('approve-modal'); }
+function openRejectModal(id) { document.getElementById('reject-app-id').value = id; openModal('reject-modal'); }
+function openCorrectionModal(id) { document.getElementById('correction-app-id').value = id; openModal('correction-modal'); }
+
+async function approveApplication() {
+  const id = document.getElementById('approve-app-id').value;
+  const remarks = document.getElementById('approve-remarks').value;
+  const data = await apiFetch(`/api/staff/applications/${id}/approve`, { method: 'POST', body: JSON.stringify({ remarks }) });
+  if (data && data.success) { closeModal('approve-modal'); alert('Application approved! Certificate issued.'); loadDashboard(); showSectionById('pending'); loadPendingApps(); }
+  else alert(data?.error || 'Failed');
+}
+
+async function rejectApplication() {
+  const id = document.getElementById('reject-app-id').value;
+  const remarks = document.getElementById('reject-remarks').value;
+  if (!remarks.trim()) { alert('Please enter a rejection reason'); return; }
+  const data = await apiFetch(`/api/staff/applications/${id}/reject`, { method: 'POST', body: JSON.stringify({ remarks }) });
+  if (data && data.success) { closeModal('reject-modal'); alert('Application rejected.'); showSectionById('pending'); loadPendingApps(); }
+  else alert(data?.error || 'Failed');
+}
+
+// Feature 1: Submit correction request
+async function submitCorrectionRequest() {
+  const id = document.getElementById('correction-app-id').value;
+  const reason = document.getElementById('correction-reason').value.trim();
+  const docs = document.getElementById('correction-docs-required').value.trim();
+  if (!reason) { alert('Please enter a correction reason'); return; }
+  const data = await apiFetch(`/api/staff/applications/${id}/request-correction`, {
+    method: 'POST', body: JSON.stringify({ correction_reason: reason, required_documents: docs })
+  });
+  if (data && data.success) { closeModal('correction-modal'); alert('Correction request sent to citizen.'); showSectionById('pending'); loadPendingApps(); }
+  else alert(data?.error || 'Failed');
+}
+
+// Feature 1: Staff corrections list
+async function loadStaffCorrections() {
+  const data = await apiFetch('/api/staff/corrections/pending');
+  const el = document.getElementById('staff-corrections-list');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No resubmitted corrections awaiting review.</p></div>';
+    return;
+  }
+  el.innerHTML = `<table class="applications-table">
+    <thead><tr><th>Citizen</th><th>Service</th><th>Correction Reason</th><th>Resubmitted</th><th>Action</th></tr></thead>
+    <tbody>${data.map(c => `
+      <tr>
+        <td>${c.citizen_name}</td>
+        <td>${c.service_name}</td>
+        <td>${c.correction_reason}</td>
+        <td>${formatDate(c.resubmitted_at)}</td>
+        <td>
+          <button class="btn btn-success btn-sm" onclick="approveCorrectionAndVerify(${c.application_id}, ${c.id})"><i class="fas fa-check"></i> Review & Approve</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function approveCorrectionAndVerify(appId, corrId) {
+  await apiFetch(`/api/staff/corrections/${corrId}/approve`, { method: 'POST' });
+  openVerify(appId);
+  showSectionById('verify');
+}
+
+// Feature 9: Get next in queue
+async function getNextInQueue() {
+  const data = await apiFetch('/api/staff/queue/next');
+  if (!data || !data.application) { alert('No applications in queue right now!'); return; }
+  openVerify(data.application.id);
+  showSectionById('verify');
+}
+
+// Feature 10: My workload
+async function loadMyWorkload() {
+  const data = await apiFetch('/api/staff/workload');
+  const el = document.getElementById('workload-content');
+  if (!data || data.message) { el.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>No workload data available yet.</p></div>'; return; }
+  el.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${data.total_approved || 0}</div><div class="stat-label">Total Approved</div></div>
+      <div class="stat-card" style="border-color:#ef4444"><div class="stat-value" style="color:#ef4444">${data.total_rejected || 0}</div><div class="stat-label">Total Rejected</div></div>
+      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b">${data.total_assigned || 0}</div><div class="stat-label">Total Assigned</div></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="margin-bottom:16px">Performance Overview</h3>
+      <p style="color:#64748b;font-size:.9rem">Approval Rate: <strong>${data.total_approved + data.total_rejected > 0 ? Math.round((data.total_approved / (data.total_approved + data.total_rejected)) * 100) : 0}%</strong></p>
+      <div class="workload-bar-wrap" style="margin-top:8px">
+        <div class="workload-bar"><div class="workload-bar-fill" style="width:${data.total_approved + data.total_rejected > 0 ? Math.round((data.total_approved / (data.total_approved + data.total_rejected)) * 100) : 0}%;background:#10b981"></div></div>
+      </div>
+    </div>`;
+}
+
+function previewDoc(url, label, type) {
+  document.getElementById('doc-preview-title').textContent = label;
+  const body = document.getElementById('doc-preview-body');
+  if (type === 'image') {
+    body.innerHTML = `<img src="${url}" alt="${label}" style="max-width:100%;max-height:70vh;border-radius:6px;display:block;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,.12)"/>`;
+  } else {
+    body.innerHTML = `
+      <iframe src="${url}" style="width:100%;height:70vh;border:none;border-radius:6px"></iframe>
+      <p style="text-align:center;margin-top:10px;font-size:.8rem;color:#64748b">
+        <i class="fas fa-info-circle"></i> If the PDF doesn't display,
+        <a href="${url}" target="_blank" style="color:#2563eb;font-weight:600">open in new tab</a>
+      </p>`;
+  }
+  openModal('doc-preview-modal');
+}
+
+function formatDate(d) {
+  if (!d) return '–';
+  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+</script>
+<!-- Document Preview Modal -->
+<div class="modal-overlay" id="doc-preview-modal" style="z-index:500">
+  <div class="modal" style="max-width:800px;width:95%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-file-alt" style="color:#2563eb"></i>
+        <span id="doc-preview-title">Document Preview</span>
+      </h3>
+      <button onclick="closeModal('doc-preview-modal')" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#64748b;padding:4px">×</button>
+    </div>
+    <div id="doc-preview-body" style="min-height:200px;display:flex;align-items:center;justify-content:center">
+      <p style="color:#94a3b8">Loading…</p>
+    </div>
+    <div style="text-align:right;margin-top:14px">
+      <button class="btn btn-outline" onclick="closeModal('doc-preview-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
