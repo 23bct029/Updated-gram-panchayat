@@ -6,9 +6,13 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const getUploadDir = (req) => {
+  return req.app.locals.uploadsDir || path.join(__dirname, '..', 'uploads');
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'public/uploads/';
+    const dir = getUploadDir(req);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
@@ -62,6 +66,25 @@ router.post('/applications', upload.array('documents', 10), (req, res) => {
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       const appId = this.lastID;
+      // Auto-assign to staff member with fewest pending applications
+      db.all(
+        `SELECT s.staff_id,
+                COUNT(a.application_id) AS pending_count
+         FROM staff s
+         LEFT JOIN applications a ON a.assigned_to = s.staff_id AND a.status = 'pending'
+         WHERE s.is_active = 1
+         GROUP BY s.staff_id
+         ORDER BY pending_count ASC
+         LIMIT 1`,
+        [],
+        (sErr, rows) => {
+          if (!sErr && rows && rows.length > 0) {
+            const staffId = rows[0].staff_id;
+            db.run(`UPDATE applications SET assigned_to=? WHERE application_id=?`, [staffId, appId]);
+            db.run(`INSERT OR IGNORE INTO staff_assignments (staff_id, application_id, assigned_at) VALUES (?,?,datetime('now'))`, [staffId, appId]);
+          }
+        }
+      );
       // Timeline event
       db.run(
         `INSERT INTO citizen_timeline_events (citizen_id, event_type, event_title, event_description, reference_id, created_at)
@@ -121,7 +144,7 @@ router.get('/certificates/:id/download', (req, res) => {
   db.get(
     `SELECT c.*, s.service_name, u.full_name AS citizen_name, u.aadhar_number,
             u.address, u.village, u.district, u.state,
-            st.full_name AS issued_by_name, a.application_data
+            st.full_name AS issued_by_name, a.application_data, a.application_id AS app_id
      FROM certificates c
      JOIN applications a ON c.application_id = a.application_id
      JOIN services s ON c.service_id = s.service_id
@@ -136,122 +159,159 @@ router.get('/certificates/:id/download', (req, res) => {
 
       const issueDate = new Date(cert.issue_date).toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
       const expiryDate = cert.expiry_date ? new Date(cert.expiry_date).toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' }) : 'N/A';
-      const verifyUrl = `http://localhost:8001/verify/${cert.verification_hash}`;
+      const issueDateRaw = new Date(cert.issue_date).toISOString().split('T')[0];
+
+      // Hash computed from meaningful certificate fields (not random secret)
+      const hashInput = `${cert.app_id}|${cert.citizen_name}|${cert.service_name}|${issueDateRaw}`;
+      const certHash = crypto.createHash('sha256').update(hashInput).digest('hex');
+
+      // Update stored hash to match this formula
+      db.run(`UPDATE certificates SET verification_hash = ? WHERE certificate_id = ?`, [certHash, cert.certificate_id]);
+
+      // QR code content: structured text with app ID and hash (NOT shown to citizen)
+      const qrContent = `application_id: APP${cert.app_id}\nhash: ${certHash}`;
+      const verifyUrl = `${req.protocol}://${req.get('host')}/verify/APP${cert.app_id}?h=${certHash}`;
 
       const html = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${cert.service_name} - Certificate</title>
+<title>${cert.service_name} – Official Certificate</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&family=Noto+Sans:wght@400;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&family=Noto+Sans:wght@400;600;700&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Noto Serif', serif; background:#f5f0e8; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .certificate { background:#fff; width:794px; min-height:1123px; margin:0 auto; padding:0; box-shadow:0 4px 40px rgba(0,0,0,0.2); position:relative; border:1px solid #c9a84c; }
+  body { font-family: 'Noto Serif', serif; background:#f5f0e8; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:20px; }
+  .no-print { width:794px; background:#1a3a6b; color:#fff; padding:10px 20px; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:space-between; font-family:'Noto Sans',sans-serif; font-size:13px; }
+  .no-print button { background:#c9a84c; color:#1a3a6b; border:none; padding:8px 22px; border-radius:5px; font-weight:700; cursor:pointer; font-size:13px; }
+  .certificate { background:#fff; width:794px; min-height:1123px; box-shadow:0 4px 40px rgba(0,0,0,.2); position:relative; border:1px solid #c9a84c; display:flex; flex-direction:column; }
   .border-outer { position:absolute; inset:8px; border:2px solid #c9a84c; pointer-events:none; z-index:1; }
   .border-inner { position:absolute; inset:14px; border:1px solid #e8d5a3; pointer-events:none; z-index:1; }
-  .header { background:linear-gradient(135deg,#1a3a6b,#2563a8); color:#fff; padding:24px 40px; text-align:center; }
-  .gov-title { font-size:11px; letter-spacing:3px; text-transform:uppercase; opacity:.85; font-family:'Noto Sans',sans-serif; }
-  .panchayat-name { font-size:26px; font-weight:700; margin:6px 0 2px; letter-spacing:1px; }
-  .sub-title { font-size:13px; opacity:.9; font-family:'Noto Sans',sans-serif; }
-  .emblem { display:flex; align-items:center; justify-content:center; gap:20px; padding:20px 40px 10px; border-bottom:2px solid #c9a84c; }
-  .emblem-icon { font-size:56px; }
-  .emblem-text { text-align:center; }
-  .emblem-text h2 { font-size:20px; color:#1a3a6b; font-weight:700; text-transform:uppercase; letter-spacing:2px; }
-  .emblem-text p { font-size:12px; color:#6b5a2a; margin-top:2px; font-family:'Noto Sans',sans-serif; }
-  .cert-number { text-align:center; padding:12px; background:#faf5e8; border-bottom:1px solid #e8d5a3; font-family:'Noto Sans',sans-serif; font-size:12px; color:#6b5a2a; }
-  .cert-number strong { color:#1a3a6b; font-size:13px; }
-  .body { padding:30px 50px; }
-  .body p.intro { text-align:center; font-size:13px; color:#555; margin-bottom:20px; font-family:'Noto Sans',sans-serif; }
-  .cert-title { text-align:center; font-size:28px; color:#1a3a6b; font-weight:700; text-transform:uppercase; letter-spacing:3px; margin-bottom:6px; }
-  .underline { width:200px; height:3px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); margin:0 auto 24px; }
-  .body-text { font-size:14px; line-height:2; color:#333; text-align:justify; margin-bottom:20px; }
-  .body-text strong { color:#1a3a6b; }
-  .details-box { background:#faf5e8; border:1px solid #e8d5a3; border-radius:4px; padding:16px 20px; margin-bottom:24px; }
-  .details-row { display:flex; border-bottom:1px dotted #e0d0a0; padding:8px 0; font-size:13px; font-family:'Noto Sans',sans-serif; }
-  .details-row:last-child { border-bottom:none; }
-  .details-label { width:200px; color:#6b5a2a; font-weight:600; }
-  .details-value { flex:1; color:#1e293b; font-weight:400; }
-  .purpose-box { background:#eff6ff; border-left:4px solid #2563a8; padding:12px 16px; margin-bottom:24px; font-size:13px; font-family:'Noto Sans',sans-serif; color:#1e40af; }
-  .validity { text-align:center; background:#f0fdf4; border:1px solid #86efac; border-radius:4px; padding:10px; margin-bottom:24px; font-family:'Noto Sans',sans-serif; font-size:13px; color:#166534; }
-  .footer { display:flex; justify-content:space-between; align-items:flex-end; padding:20px 50px 30px; border-top:2px solid #c9a84c; }
-  .qr-section { text-align:center; }
-  .qr-section p { font-size:10px; color:#888; margin-top:4px; font-family:'Noto Sans',sans-serif; }
-  .signature-section { text-align:center; }
-  .sig-line { width:180px; border-bottom:2px solid #1a3a6b; margin-bottom:6px; }
+  .watermark { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-30deg); font-size:72px; color:rgba(37,99,168,.04); font-weight:900; pointer-events:none; z-index:0; white-space:nowrap; text-transform:uppercase; letter-spacing:8px; font-family:'Noto Sans',sans-serif; }
+  /* HEADER */
+  .cert-header { background:linear-gradient(135deg,#1a3a6b,#2563a8); color:#fff; padding:0; position:relative; }
+  .cert-header-top { display:flex; align-items:center; justify-content:space-between; padding:16px 36px 0; }
+  .ashoka { font-size:52px; }
+  .header-center { text-align:center; flex:1; padding:0 16px; }
+  .gov-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; opacity:.8; font-family:'Noto Sans',sans-serif; }
+  .panchayat-name { font-size:22px; font-weight:700; margin:4px 0 2px; letter-spacing:.5px; }
+  .panchayat-sub { font-size:11px; opacity:.85; font-family:'Noto Sans',sans-serif; }
+  .cert-header-divider { height:3px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); margin:12px 36px 0; }
+  .cert-type-banner { text-align:center; padding:10px 36px 16px; }
+  .cert-type-banner h2 { font-size:18px; font-weight:700; text-transform:uppercase; letter-spacing:3px; color:rgba(255,255,255,.95); }
+  /* CERT NUMBER BAR */
+  .cert-num-bar { background:#faf5e8; border-top:2px solid #c9a84c; border-bottom:1px solid #e8d5a3; padding:10px 36px; display:flex; justify-content:space-between; font-family:'Noto Sans',sans-serif; font-size:12px; color:#6b5a2a; }
+  .cert-num-bar strong { color:#1a3a6b; }
+  /* BODY */
+  .cert-body { padding:24px 44px; flex:1; position:relative; z-index:2; }
+  .cert-intro { text-align:center; font-size:13px; color:#666; margin-bottom:18px; font-family:'Noto Sans',sans-serif; font-style:italic; }
+  .cert-subject { text-align:center; font-size:26px; font-weight:700; color:#1a3a6b; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px; }
+  .gold-line { width:180px; height:3px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); margin:0 auto 20px; }
+  .details-box { background:#faf5e8; border:1px solid #e8d5a3; border-radius:4px; padding:14px 18px; margin-bottom:18px; }
+  .dr { display:flex; border-bottom:1px dotted #e0d0a0; padding:7px 0; font-size:13px; font-family:'Noto Sans',sans-serif; }
+  .dr:last-child { border-bottom:none; }
+  .dl { width:190px; color:#6b5a2a; font-weight:600; flex-shrink:0; }
+  .dv { flex:1; color:#1e293b; }
+  .purpose-strip { background:#eff6ff; border-left:4px solid #2563a8; padding:10px 14px; margin-bottom:18px; font-size:13px; font-family:'Noto Sans',sans-serif; color:#1e40af; }
+  .body-para { font-size:13px; line-height:1.9; color:#333; text-align:justify; margin-bottom:16px; }
+  .valid-strip { text-align:center; background:#f0fdf4; border:1px solid #86efac; border-radius:4px; padding:9px; margin-bottom:18px; font-family:'Noto Sans',sans-serif; font-size:12px; color:#166534; }
+  /* FOOTER */
+  .cert-footer { border-top:2px solid #c9a84c; padding:16px 44px 20px; display:flex; justify-content:space-between; align-items:flex-end; background:#fefefe; }
+  .qr-block { text-align:center; }
+  .qr-label { font-size:9px; color:#888; margin-top:4px; font-family:'Noto Sans',sans-serif; }
+  .sig-block { text-align:center; }
+  .sig-line { width:170px; border-bottom:2px solid #1a3a6b; margin-bottom:5px; }
   .sig-name { font-size:13px; font-weight:700; color:#1a3a6b; font-family:'Noto Sans',sans-serif; }
-  .sig-title { font-size:11px; color:#666; font-family:'Noto Sans',sans-serif; }
-  .hash-box { text-align:center; padding:10px 40px 0; font-size:9px; color:#aaa; font-family:monospace; word-break:break-all; }
-  .watermark { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-30deg); font-size:80px; color:rgba(37,99,168,0.04); font-weight:900; pointer-events:none; z-index:0; white-space:nowrap; text-transform:uppercase; letter-spacing:10px; }
-  @media print { body{background:#fff;padding:0} .certificate{box-shadow:none;border:none} .no-print{display:none} }
+  .sig-title { font-size:10px; color:#666; font-family:'Noto Sans',sans-serif; margin-top:1px; }
+  .cert-id-footer { text-align:center; font-size:9px; font-family:'Noto Sans',sans-serif; color:#aaa; padding:6px 44px 10px; letter-spacing:.3px; }
+  @media print { body{background:#fff;padding:0} .no-print{display:none!important} .certificate{box-shadow:none;border:none;min-height:100vh} }
 </style>
 </head>
 <body>
-<div class="no-print" style="text-align:center;padding:12px;background:#1a3a6b;color:#fff;font-family:sans-serif;font-size:13px">
-  <button onclick="window.print()" style="background:#c9a84c;color:#1a3a6b;border:none;padding:8px 24px;border-radius:4px;font-weight:700;cursor:pointer;margin-right:10px">🖨️ Print / Save PDF</button>
-  <span>Digital Gram Panchayat – Official Certificate</span>
+<div class="no-print">
+  <span>🏛️ Digital Gram Panchayat – Official Certificate</span>
+  <button onclick="window.print()">🖨️ Print / Save as PDF</button>
 </div>
 <div class="certificate">
   <div class="border-outer"></div>
   <div class="border-inner"></div>
   <div class="watermark">OFFICIAL</div>
-  <div class="header">
-    <div class="gov-title">Government of India – Gram Panchayat</div>
-    <div class="panchayat-name">🏛️ Digital Gram Panchayat Services Portal</div>
-    <div class="sub-title">Village Administration • e-Governance Initiative</div>
-  </div>
-  <div class="emblem">
-    <div class="emblem-icon">🪔</div>
-    <div class="emblem-text">
-      <h2>${cert.service_name}</h2>
-      <p>Issued under the authority of Gram Panchayat Administration</p>
+
+  <div class="cert-header">
+    <div class="cert-header-top">
+      <div class="ashoka">🏛️</div>
+      <div class="header-center">
+        <div class="gov-label">Government of India · Gram Panchayat</div>
+        <div class="panchayat-name">Digital Gram Panchayat Services Portal</div>
+        <div class="panchayat-sub">Village Administration · e-Governance Initiative · Paperless · Transparent</div>
+      </div>
+      <div class="ashoka">🏛️</div>
     </div>
-    <div class="emblem-icon">🪔</div>
+    <div class="cert-header-divider"></div>
+    <div class="cert-type-banner"><h2>${cert.service_name}</h2></div>
   </div>
-  <div class="cert-number">Certificate No: <strong>${cert.certificate_number}</strong> &nbsp;|&nbsp; Issue Date: <strong>${issueDate}</strong></div>
-  <div class="body">
-    <p class="intro">This is to certify that the following information has been verified and approved by the authorized Gram Panchayat Officer</p>
-    <div class="cert-title">${cert.service_name}</div>
-    <div class="underline"></div>
+
+  <div class="cert-num-bar">
+    <span>Certificate No: <strong>${cert.certificate_number}</strong></span>
+    <span>Application ID: <strong>APP${cert.app_id}</strong></span>
+    <span>Issue Date: <strong>${issueDate}</strong></span>
+  </div>
+
+  <div class="cert-body">
+    <p class="cert-intro">This is to certify that the following information has been duly verified and approved by the authorized Gram Panchayat Officer</p>
+    <div class="cert-subject">${cert.service_name}</div>
+    <div class="gold-line"></div>
+
     <div class="details-box">
-      <div class="details-row"><span class="details-label">Full Name</span><span class="details-value"><strong>${cert.citizen_name}</strong></span></div>
-      <div class="details-row"><span class="details-label">Aadhar Number</span><span class="details-value">${cert.aadhar_number ? cert.aadhar_number.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : '–'}</span></div>
-      <div class="details-row"><span class="details-label">Address</span><span class="details-value">${cert.address || '–'}</span></div>
-      <div class="details-row"><span class="details-label">Village / District</span><span class="details-value">${cert.village || '–'}, ${cert.district || '–'}</span></div>
-      <div class="details-row"><span class="details-label">State</span><span class="details-value">${cert.state || 'Rajasthan'}</span></div>
-      <div class="details-row"><span class="details-label">Issue Date</span><span class="details-value">${issueDate}</span></div>
-      <div class="details-row"><span class="details-label">Valid Until</span><span class="details-value">${expiryDate}</span></div>
-      <div class="details-row"><span class="details-label">Issued By</span><span class="details-value">${cert.issued_by_name || 'Gram Panchayat Officer'}</span></div>
+      <div class="dr"><span class="dl">Full Name</span><span class="dv"><strong>${cert.citizen_name}</strong></span></div>
+      <div class="dr"><span class="dl">Aadhar Number</span><span class="dv">${cert.aadhar_number ? cert.aadhar_number.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 XXXX') : '–'}</span></div>
+      <div class="dr"><span class="dl">Address</span><span class="dv">${cert.address || '–'}</span></div>
+      <div class="dr"><span class="dl">Village / District</span><span class="dv">${cert.village || '–'}, ${cert.district || '–'}</span></div>
+      <div class="dr"><span class="dl">State</span><span class="dv">${cert.state || 'India'}</span></div>
+      <div class="dr"><span class="dl">Certificate Type</span><span class="dv">${cert.service_name}</span></div>
+      <div class="dr"><span class="dl">Issue Date</span><span class="dv">${issueDate}</span></div>
+      <div class="dr"><span class="dl">Valid Until</span><span class="dv">${expiryDate}</span></div>
+      <div class="dr"><span class="dl">Issued By</span><span class="dv">${cert.issued_by_name || 'Gram Panchayat Officer'}</span></div>
     </div>
-    ${appData.purpose ? `<div class="purpose-box"><strong>Purpose:</strong> ${appData.purpose}</div>` : ''}
-    <p class="body-text">
-      This certificate has been issued based on the documents submitted and verified by the Gram Panchayat office.
-      This certificate is valid for official purposes. Any misuse or tampering of this certificate is a punishable offence under applicable laws.
+
+    ${appData.purpose ? `<div class="purpose-strip"><strong>📋 Purpose:</strong> ${appData.purpose}</div>` : ''}
+
+    <p class="body-para">
+      This certificate is issued based on the documents submitted and duly verified by the Gram Panchayat office.
+      This document is valid for all official purposes. Any misuse, forgery, or tampering of this certificate
+      is a punishable offence under applicable Indian laws.
     </p>
-    <div class="validity">✅ This certificate is digitally verified. Scan the QR code or visit: <strong>${verifyUrl}</strong></div>
+
+    <div class="valid-strip">✅ This certificate is digitally verified. Scan the QR code below to verify authenticity.</div>
   </div>
-  <div class="footer">
-    <div class="qr-section">
+
+  <div class="cert-footer">
+    <div class="qr-block">
       <div id="qrcode"></div>
-      <p>Scan to verify</p>
+      <div class="qr-label">Scan QR to verify</div>
     </div>
-    <div class="signature-section">
+    <div class="sig-block">
       <div class="sig-line"></div>
       <div class="sig-name">${cert.issued_by_name || 'Gram Panchayat Officer'}</div>
       <div class="sig-title">Authorised Signatory</div>
       <div class="sig-title">Gram Panchayat Administration</div>
     </div>
   </div>
-  <div class="hash-box">Digital Fingerprint (SHA-256): ${cert.verification_hash || ''}</div>
+  <div class="cert-id-footer">Certificate No: ${cert.certificate_number} · Application ID: APP${cert.app_id} · Verify at: ${verifyUrl}</div>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-  new QRCode(document.getElementById('qrcode'), { text: '${verifyUrl}', width:90, height:90 });
+  // QR contains application_id and hash – NOT shown to user in plain text
+  new QRCode(document.getElementById('qrcode'), {
+    text: ${JSON.stringify(qrContent)},
+    width: 100, height: 100,
+    correctLevel: QRCode.CorrectLevel.M
+  });
 </script>
 </body>
 </html>`;
 
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Content-Disposition', `inline; filename="${cert.service_name.replace(/\s+/g,'_')}_${cert.certificate_number}.html"`);
       res.send(html);
     });
@@ -415,18 +475,108 @@ router.get('/notifications/unread-count', (req, res) => {
 });
 
 // Public: schemes and announcements (no auth needed - moved to common via auth bypass)
+// Profile - GET
+router.get('/profile', (req, res) => {
+  const db = req.app.locals.db;
+  db.get(
+    `SELECT user_id AS id, full_name, email, phone, address, village, block, district, state, pincode,
+            date_of_birth, gender, occupation, created_at
+     FROM users WHERE user_id = ?`,
+    [req.userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: 'User not found' });
+      res.json(row);
+    });
+});
+
+// Profile - UPDATE (email and aadhar are NOT updatable)
+router.patch('/profile', (req, res) => {
+  const db = req.app.locals.db;
+  const { full_name, phone, address, village, block, district, state, pincode, date_of_birth, gender, occupation } = req.body;
+  db.run(
+    `UPDATE users SET full_name=?, phone=?, address=?, village=?, block=?, district=?, state=?, pincode=?,
+            date_of_birth=?, gender=?, occupation=?, updated_at=datetime('now')
+     WHERE user_id=?`,
+    [full_name, phone, address, village, block, district, state, pincode, date_of_birth, gender, occupation, req.userId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    });
+});
+
+// Schemes - filtered by citizen's occupation (only show eligible schemes)
 router.get('/schemes', (req, res) => {
-  const schemes = [
-    { id:1, name:'PM-KISAN', category:'Agriculture', desc:'Direct income support of ₹6,000/year for farmers with land holdings.', eligibility:'Farmers owning cultivable land', benefit:'₹6,000 per year in 3 installments', link:'https://pmkisan.gov.in', icon:'🌾' },
-    { id:2, name:'MNREGA', category:'Employment', desc:'Guarantees 100 days of wage employment per year to rural households.', eligibility:'Rural households, any adult member willing to do unskilled work', benefit:'100 days work guarantee at minimum wages', link:'https://nrega.nic.in', icon:'⛏️' },
-    { id:3, name:'PMAY-G', category:'Housing', desc:'Housing for all — financial assistance to BPL families to build pucca houses.', eligibility:'BPL families, SC/ST, minorities', benefit:'₹1.20 lakh (plain areas), ₹1.30 lakh (hills)', link:'https://pmayg.nic.in', icon:'🏠' },
-    { id:4, name:'Sukanya Samriddhi', category:'Women & Child', desc:'Savings scheme for girl child education and marriage expenses.', eligibility:'Parents/guardians of girl child below 10 years', benefit:'High interest rate (8.2%), tax benefits', link:'https://www.nsiindia.gov.in', icon:'👧' },
-    { id:5, name:'National Pension Scheme', category:'Social Security', desc:'Pension scheme for unorganised sector workers.', eligibility:'Age 18-40, unorganised workers', benefit:'₹3,000/month pension after 60', link:'https://www.npscra.nsdl.co.in', icon:'👴' },
-    { id:6, name:'Ayushman Bharat', category:'Healthcare', desc:'Health coverage of ₹5 lakh per family per year for secondary and tertiary care.', eligibility:'Bottom 40% population as per SECC data', benefit:'₹5 lakh health insurance per family/year', link:'https://pmjay.gov.in', icon:'🏥' },
-    { id:7, name:'Kisan Credit Card', category:'Agriculture', desc:'Credit facility for farmers to meet agricultural and allied needs.', eligibility:'Farmers, sharecroppers, tenant farmers', benefit:'Revolving credit up to ₹3 lakh at 7% interest', link:'https://www.nabard.org', icon:'💳' },
-    { id:8, name:'PM Ujjwala Yojana', category:'Energy', desc:'Free LPG connections to women from BPL households.', eligibility:'BPL women, 18+ years', benefit:'Free LPG connection + first refill', link:'https://pmuy.gov.in', icon:'🔥' },
-  ];
-  res.json(schemes);
+  const db = req.app.locals.db;
+  db.get(`SELECT occupation, gender, date_of_birth FROM users WHERE user_id=?`, [req.userId], (err, user) => {
+    const occ = ((user && user.occupation) || '').toLowerCase();
+    const gender = ((user && user.gender) || '').toLowerCase();
+    const age = user && user.date_of_birth
+      ? Math.floor((Date.now() - new Date(user.date_of_birth)) / (365.25*24*3600*1000))
+      : null;
+
+    const allSchemes = [
+      { id:1, name:'PM-KISAN', category:'Agriculture', icon:'🌾',
+        desc:'Direct income support of ₹6,000/year for farmers with land holdings.',
+        eligibility:'Farmers owning cultivable land',
+        benefit:'₹6,000 per year in 3 installments', link:'https://pmkisan.gov.in',
+        occupations:['farmer','agriculture','agriculturist','tenant','sharecropper'] },
+      { id:2, name:'MNREGA', category:'Employment', icon:'⛏️',
+        desc:'Guarantees 100 days of wage employment per year to rural households.',
+        eligibility:'Any adult rural household member',
+        benefit:'100 days work guarantee at minimum wages', link:'https://nrega.nic.in',
+        occupations:['all'] },
+      { id:3, name:'PMAY-G (Housing)', category:'Housing', icon:'🏠',
+        desc:'Financial assistance to BPL/SC/ST families to build pucca houses.',
+        eligibility:'BPL families, SC/ST, minorities without pucca house',
+        benefit:'₹1.20–1.30 lakh for house construction', link:'https://pmayg.nic.in',
+        occupations:['all'] },
+      { id:4, name:'Sukanya Samriddhi', category:'Women & Child', icon:'👧',
+        desc:'Savings scheme for girl child education and marriage.',
+        eligibility:'Parents/guardians of girl child below 10 years',
+        benefit:'8.2% interest, tax benefits', link:'https://www.nsiindia.gov.in',
+        genders:['female'], occupations:['all'] },
+      { id:5, name:'Ayushman Bharat', category:'Healthcare', icon:'🏥',
+        desc:'Health coverage of ₹5 lakh per family per year.',
+        eligibility:'Bottom 40% population (SECC data)',
+        benefit:'₹5 lakh health insurance/year', link:'https://pmjay.gov.in',
+        occupations:['all'] },
+      { id:6, name:'PM Ujjwala Yojana', category:'Energy', icon:'🔥',
+        desc:'Free LPG connections to women from BPL households.',
+        eligibility:'BPL women, 18+ years',
+        benefit:'Free LPG connection + first refill', link:'https://pmuy.gov.in',
+        genders:['female'], occupations:['all'] },
+      { id:7, name:'Kisan Credit Card', category:'Agriculture', icon:'💳',
+        desc:'Credit facility for farmers at subsidised interest rate.',
+        eligibility:'Farmers, sharecroppers, tenant farmers',
+        benefit:'Credit up to ₹3 lakh at 7% interest', link:'https://www.nabard.org',
+        occupations:['farmer','agriculture','agriculturist','tenant','sharecropper'] },
+      { id:8, name:'National Pension Scheme', category:'Social Security', icon:'👴',
+        desc:'Pension scheme for unorganised sector workers.',
+        eligibility:'Age 18-40, unorganised workers',
+        benefit:'₹3,000/month pension after 60', link:'https://www.npscra.nsdl.co.in',
+        occupations:['labour','laborer','worker','daily wage','unorganised','casual'] },
+    ];
+
+    const eligible = allSchemes.filter(s => {
+      // If occupations is 'all', always eligible
+      if (s.occupations && s.occupations[0] !== 'all') {
+        // If we have occupation data, filter strictly
+        if (occ) {
+          const matches = s.occupations.some(o => occ.includes(o) || o.includes(occ));
+          if (!matches) return false;
+        }
+        // If no occupation set, show anyway (citizen hasn't filled profile)
+      }
+      // Gender filter for specific schemes
+      if (s.genders && s.genders.length && gender) {
+        if (!s.genders.includes(gender)) return false;
+      }
+      return true;
+    });
+
+    res.json(eligible.map(s => ({ ...s, occupations: undefined, genders: undefined })));
+  });
 });
 
 router.get('/announcements', (req, res) => {

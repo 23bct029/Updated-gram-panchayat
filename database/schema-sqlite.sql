@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS admin (
 -- Services Table
 CREATE TABLE IF NOT EXISTS services (
     service_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    service_name TEXT NOT NULL,
+    service_name TEXT NOT NULL UNIQUE,
     service_type TEXT NOT NULL,
     description TEXT,
     required_documents TEXT,
@@ -233,12 +233,23 @@ VALUES ('Demo Citizen', 'citizen@example.com', '9876543210', '123456789012', '$2
 INSERT OR IGNORE INTO staff (full_name, email, phone, password_hash, role, employee_id, department, panchayat_name)
 VALUES ('Demo Staff', 'staff@example.com', '9876543211', '$2b$10$qiDWCzy6L2UpWYgdYY9l3uDPJD8.YW70dSjmGJXGIVnrG1WqAq6Ey', 'officer', 'EMP001', 'Administration', 'Demo Panchayat');
 
-INSERT OR IGNORE INTO services (service_name, service_type, description, required_documents, processing_time, fee)
-VALUES 
-('Birth Certificate', 'certificate', 'Official birth certificate', 'ID Proof, Address Proof', '5-7 days', 100),
-('Death Certificate', 'certificate', 'Official death certificate', 'ID Proof, Medical Certificate', '3-5 days', 50),
-('Caste Certificate', 'certificate', 'Official caste certificate', 'Aadhar, ID Proof', '10-15 days', 150),
-('Income Certificate', 'certificate', 'Income certificate for subsidies', 'ID Proof, Residence Proof', '7-10 days', 200);
+-- Delete any duplicate services first, keep only unique names
+DELETE FROM services WHERE service_id NOT IN (
+  SELECT MIN(service_id) FROM services GROUP BY service_name
+);
+
+-- Seed canonical services (INSERT OR IGNORE prevents duplicates)
+INSERT OR IGNORE INTO services (service_name, service_type, description, required_documents, processing_time, fee) VALUES
+('Birth Certificate', 'certificate', 'Official birth registration certificate issued by Gram Panchayat', 'Hospital Birth Record, Parent Aadhar, Parent Photo ID', '5-7 days', 100),
+('Death Certificate', 'certificate', 'Official death registration certificate', 'Doctor Death Certificate, Deceased Aadhar, Applicant ID', '3-5 days', 50),
+('Caste Certificate', 'certificate', 'Certificate confirming caste/community membership', 'Aadhar Card, Ration Card, Parent Caste Certificate, Affidavit', '10-15 days', 150),
+('Income Certificate', 'certificate', 'Certificate of annual family income for government schemes', 'Aadhar Card, Salary Slip / Income Affidavit, Bank Passbook', '7-10 days', 200),
+('Residence Certificate', 'certificate', 'Proof of residence in this village/panchayat jurisdiction', 'Aadhar Card, Utility Bill / Rent Agreement, Voter ID', '5-7 days', 100),
+('Agriculture Land Certificate', 'certificate', 'Certificate confirming agricultural land ownership / tenancy', 'Aadhar Card, Land Records (Patta/Khasra), Ration Card', '7-10 days', 150),
+('Character Certificate', 'certificate', 'Certificate of good conduct issued by Gram Panchayat', 'Aadhar Card, Photo ID, 2 Passport Photos, Self-declaration', '3-5 days', 50),
+('Dependency Certificate', 'certificate', 'Certificate confirming financial dependency on a family member', 'Aadhar of both persons, Ration Card, Relationship Proof', '5-7 days', 100),
+('No Objection Certificate', 'certificate', 'General purpose NOC issued by Panchayat', 'Aadhar Card, Application Letter, Purpose Documents', '3-5 days', 75),
+('Family Member Certificate', 'certificate', 'Certificate listing all family members in a household', 'Ration Card, Aadhar of all members, Address Proof', '5-7 days', 100);
 
 INSERT OR IGNORE INTO schemes (scheme_name, scheme_type, description, eligibility_criteria, benefits)
 VALUES 

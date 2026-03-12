@@ -98,6 +98,14 @@ router.post('/services', (req, res) => {
     });
 });
 
+router.delete('/services/:id', (req, res) => {
+  const db = req.app.locals.db;
+  db.run(`UPDATE services SET is_active=0 WHERE service_id=?`, [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 router.patch('/services/:id', (req, res) => {
   const db = req.app.locals.db;
   const { name, description, fee, processing_days, required_documents, is_active } = req.body;
@@ -200,19 +208,24 @@ router.get('/workload/all', (req, res) => {
 
 router.post('/rebalance', (req, res) => {
   const db = req.app.locals.db;
+  // Get ALL pending applications (reassign all, not just unassigned)
   db.all(
-    `SELECT a.application_id AS id FROM applications a
-     LEFT JOIN staff_assignments sa ON sa.application_id = a.application_id
-     WHERE a.status='pending' AND sa.application_id IS NULL ORDER BY a.created_at ASC`,
+    `SELECT application_id AS id FROM applications WHERE status='pending' ORDER BY created_at ASC`,
     [], (err, apps) => {
       if (err) return res.status(500).json({ error: err.message });
-      db.all(`SELECT staff_id FROM staff WHERE is_active=1`, [], (err2, staffList) => {
+      db.all(`SELECT staff_id FROM staff WHERE is_active=1 ORDER BY staff_id ASC`, [], (err2, staffList) => {
         if (err2 || !staffList.length) return res.status(400).json({ error: 'No active staff' });
-        apps.forEach((app, idx) => {
-          const staffId = staffList[idx % staffList.length].staff_id;
-          db.run(`INSERT OR IGNORE INTO staff_assignments (staff_id, application_id, assigned_at) VALUES (?,?,datetime('now'))`, [staffId, app.id]);
+        // Clear existing assignments for pending apps, then reassign evenly
+        const pendingIds = apps.map(a => a.id);
+        if (!pendingIds.length) return res.json({ success: true, applications_assigned: 0, staff_count: staffList.length });
+        db.run(`DELETE FROM staff_assignments WHERE application_id IN (${pendingIds.map(()=>'?').join(',')})`, pendingIds, () => {
+          apps.forEach((app, idx) => {
+            const staffId = staffList[idx % staffList.length].staff_id;
+            db.run(`INSERT OR IGNORE INTO staff_assignments (staff_id, application_id, assigned_at) VALUES (?,?,datetime('now'))`, [staffId, app.id]);
+            db.run(`UPDATE applications SET assigned_to=?, updated_at=datetime('now') WHERE application_id=?`, [staffId, app.id]);
+          });
+          res.json({ success: true, applications_assigned: apps.length, staff_count: staffList.length });
         });
-        res.json({ success: true, applications_assigned: apps.length, staff_count: staffList.length });
       });
     });
 });

@@ -91,6 +91,7 @@
       <li><a href="#" onclick="showSection('manage-services')"><i class="fas fa-cogs"></i> Manage Services</a></li>
       <li><a href="#" onclick="showSection('demographics')"><i class="fas fa-chart-bar"></i> Demographics</a></li>
       <li><a href="#" onclick="showSection('insights')"><i class="fas fa-chart-line"></i> Insights</a></li>
+      <li><a href="#" onclick="showSection('announcements')"><i class="fas fa-bullhorn"></i> Announcements</a></li>
       <li><a href="#" onclick="showSection('workload-dist')"><i class="fas fa-balance-scale"></i> Workload Distribution</a></li>
     </ul>
   </nav>
@@ -107,8 +108,8 @@
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-value" id="a-citizens">–</div><div class="stat-label">Total Citizens</div></div>
       <div class="stat-card" style="border-color:#10b981"><div class="stat-value" style="color:#10b981" id="a-staff">–</div><div class="stat-label">Staff Members</div></div>
-      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b" id="a-pending">–</div><div class="stat-label">Pending Apps</div></div>
-      <div class="stat-card" style="border-color:#2563eb"><div class="stat-value" style="color:#2563eb" id="a-approved">–</div><div class="stat-label">Approved Apps</div></div>
+      <div class="stat-card" style="border-color:#f59e0b"><div class="stat-value" style="color:#f59e0b" id="a-pending">–</div><div class="stat-label">Pending Applications</div></div>
+      <div class="stat-card" style="border-color:#2563eb"><div class="stat-value" style="color:#2563eb" id="a-approved">–</div><div class="stat-label">Approved Applications</div></div>
       <div class="stat-card" style="border-color:#8b5cf6"><div class="stat-value" style="color:#8b5cf6" id="a-certs">–</div><div class="stat-label">Certificates Issued</div></div>
     </div>
     <div id="dashboard-chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
@@ -179,6 +180,22 @@
     <div id="workload-content"><div class="loading"><i class="fas fa-spinner"></i></div></div>
   </section>
 
+  <!-- ANNOUNCEMENTS -->
+  <section id="announcements" class="section">
+    <div class="page-header">
+      <h1>Manage Announcements</h1>
+      <p>Add, view, and remove announcements visible to citizens</p>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-ann-modal')"><i class="fas fa-plus"></i> Add Announcement</button>
+      <button class="btn btn-outline btn-sm" onclick="loadAnnouncements()"><i class="fas fa-sync"></i> Refresh</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Active Announcements</h3></div>
+      <div id="announcements-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    </div>
+  </section>
+
 </main>
 
 <!-- ADD STAFF MODAL -->
@@ -208,6 +225,29 @@
     <div class="form-actions">
       <button class="btn btn-outline" onclick="closeModal('add-service-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="addService()"><i class="fas fa-save"></i> Add Service</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ANNOUNCEMENT MODAL -->
+<div class="modal-overlay" id="add-ann-modal">
+  <div class="modal">
+    <h3><i class="fas fa-bullhorn" style="color:#7c3aed"></i> Add Announcement</h3>
+    <div class="form-group"><label>Title</label><input type="text" id="ann-title" placeholder="Announcement title"/></div>
+    <div class="form-group"><label>Type</label>
+      <select id="ann-type">
+        <option value="general">📌 General</option>
+        <option value="health">🏥 Health</option>
+        <option value="notice">📢 Notice</option>
+        <option value="scheme">🌱 Scheme</option>
+        <option value="meeting">👥 Meeting</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Content</label><textarea id="ann-content" rows="4" placeholder="Full announcement text..."></textarea></div>
+    <div class="form-group"><label>Expiry Date (optional)</label><input type="date" id="ann-expiry"/></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-ann-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addAnnouncement()"><i class="fas fa-save"></i> Publish</button>
     </div>
   </div>
 </div>
@@ -242,6 +282,7 @@ function showSection(name) {
     'demographics': loadDemographics,
     'insights': loadInsights,
     'workload-dist': loadWorkload,
+    'announcements': loadAnnouncements,
   };
   if (loaders[name]) loaders[name]();
 }
@@ -318,6 +359,7 @@ async function loadStaff() {
         <td>${s.approved_count || 0}</td><td>${s.pending_count || 0}</td>
         <td>${formatDate(s.created_at)}</td>
         <td><span class="badge badge-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteService(${s.id})"><i class="fas fa-trash"></i> Delete</button></td>
       </tr>`).join('')}
     </tbody>
   </table>`;
@@ -340,7 +382,7 @@ async function loadServices() {
   const el = document.getElementById('services-list');
   if (!svc || svc.length === 0) { el.innerHTML = '<div class="empty-state"><i class="fas fa-cogs"></i><p>No services yet.</p></div>'; return; }
   el.innerHTML = `<table class="applications-table">
-    <thead><tr><th>Service</th><th>Fee</th><th>Processing Days</th><th>Required Docs</th><th>Status</th></tr></thead>
+    <thead><tr><th>Service</th><th>Fee</th><th>Processing Days</th><th>Required Docs</th><th>Status</th><th>Action</th></tr></thead>
     <tbody>${svc.map(s => `
       <tr>
         <td><strong>${s.name}</strong><br><small style="color:#64748b">${s.description || ''}</small></td>
@@ -348,6 +390,7 @@ async function loadServices() {
         <td>${s.processing_days || '–'} days</td>
         <td><small>${s.required_documents || '–'}</small></td>
         <td><span class="badge badge-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteService(${s.id})"><i class="fas fa-trash"></i> Delete</button></td>
       </tr>`).join('')}
     </tbody>
   </table>`;
@@ -516,6 +559,52 @@ async function rebalanceWorkload() {
     alert(`Rebalanced! ${data.applications_assigned} applications assigned across ${data.staff_count} staff members.`);
     loadWorkload();
   } else alert(data?.error || 'Failed to rebalance');
+}
+
+// ── ANNOUNCEMENTS ──────────────────────────────
+async function loadAnnouncements() {
+  const anns = await apiFetch('/api/admin/announcements');
+  const el = document.getElementById('announcements-list');
+  if (!anns || anns.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No announcements yet. Add one above.</p></div>';
+    return;
+  }
+  const TYPES = {general:'📌 General',health:'🏥 Health',notice:'📢 Notice',scheme:'🌱 Scheme',meeting:'👥 Meeting'};
+  el.innerHTML = `<table class="applications-table">
+    <thead><tr><th>Title</th><th>Type</th><th>Published</th><th>Expires</th><th>Action</th></tr></thead>
+    <tbody>${anns.map(a=>`
+      <tr>
+        <td><strong>${a.title}</strong><br><small style="color:#64748b">${(a.content||'').substring(0,60)}…</small></td>
+        <td>${TYPES[a.announcement_type]||a.announcement_type}</td>
+        <td>${formatDate(a.published_on)}</td>
+        <td>${a.expiry_date?formatDate(a.expiry_date):'No expiry'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteAnnouncement(${a.announcement_id})"><i class="fas fa-trash"></i> Delete</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+async function addAnnouncement() {
+  const title = document.getElementById('ann-title').value;
+  const content = document.getElementById('ann-content').value;
+  const type = document.getElementById('ann-type').value;
+  const expiry = document.getElementById('ann-expiry').value;
+  if (!title || !content) { alert('Title and content are required.'); return; }
+  const data = await apiFetch('/api/admin/announcements', {method:'POST', body:JSON.stringify({title, content, announcement_type:type, expiry_date:expiry||null})});
+  if (data && data.success) { closeModal('add-ann-modal'); alert('Announcement published!'); loadAnnouncements(); }
+  else alert(data?.error || 'Failed');
+}
+async function deleteAnnouncement(id) {
+  if (!confirm('Delete this announcement?')) return;
+  const data = await apiFetch(`/api/admin/announcements/${id}`, {method:'DELETE'});
+  if (data && data.success) loadAnnouncements();
+  else alert(data?.error || 'Failed');
+}
+
+async function deleteService(id) {
+  if (!confirm('Delete this service? This will deactivate it and it will no longer appear for citizens.')) return;
+  const data = await apiFetch(`/api/admin/services/${id}`, { method: 'DELETE' });
+  if (data && data.success) { alert('Service deleted.'); loadServices(); }
+  else alert(data?.error || 'Failed to delete service');
 }
 
 function formatDate(d) {

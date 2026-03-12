@@ -11,218 +11,173 @@
     :root{--navy:#0f2a5e;--blue:#1a4da8;--sky:#2563eb;--gold:#c9a84c;--green:#059669;--red:#dc2626;--orange:#f59e0b;--gray:#64748b;--light:#f8fafc}
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;display:flex;min-height:100vh}
-    /* SIDEBAR */
-    .sidebar{width:260px;background:var(--navy);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;transition:all .3s}
-    .sidebar-header{padding:20px;border-bottom:1px solid rgba(255,255,255,.1)}
-    .sidebar-header h2{color:#fff;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px}
-    .sidebar-header p{color:rgba(255,255,255,.6);font-size:.75rem;margin-top:3px}
-    .sidebar nav{flex:1;padding:10px 0;overflow-y:auto}
+    .sidebar{width:260px;background:var(--navy);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100}
+    .sidebar-header{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .sidebar-header h2{color:#fff;font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px}
+    .sidebar-header p{color:rgba(255,255,255,.6);font-size:.72rem;margin-top:3px}
+    .sidebar nav{flex:1;padding:8px 0;overflow-y:auto}
     .sidebar nav li{list-style:none}
-    .sidebar nav li a{display:flex;align-items:center;gap:10px;padding:11px 18px;color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;font-weight:500;transition:all .2s;cursor:pointer;border-left:3px solid transparent}
+    .sidebar nav li a{display:flex;align-items:center;gap:10px;padding:10px 18px;color:rgba(255,255,255,.7);text-decoration:none;font-size:.83rem;font-weight:500;transition:all .2s;cursor:pointer;border-left:3px solid transparent}
     .sidebar nav li a:hover,.sidebar nav li a.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold)}
-    .sidebar nav li a i{width:16px;text-align:center;font-size:.85rem}
-    .sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.1)}
-    .sidebar-footer a{color:#ef4444;text-decoration:none;display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:500}
-    /* TOPBAR */
+    .sidebar nav li a i{width:16px;text-align:center;font-size:.83rem}
+    .sidebar-footer{padding:12px 18px;border-top:1px solid rgba(255,255,255,.1)}
+    .sidebar-footer a{color:#ef4444;text-decoration:none;display:flex;align-items:center;gap:8px;font-size:.83rem;font-weight:500}
     .topbar{position:fixed;top:0;left:260px;right:0;height:60px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:99;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-    .topbar-left{display:flex;align-items:center;gap:12px}
-    .topbar-left h3{font-size:1rem;font-weight:700;color:#1e293b}
-    .topbar-right{display:flex;align-items:center;gap:16px}
-    .notif-btn{position:relative;background:none;border:none;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;transition:.2s;font-size:1.1rem}
+    .topbar-left h3{font-size:.95rem;font-weight:700;color:#1e293b}
+    .topbar-right{display:flex;align-items:center;gap:14px}
+    .notif-btn{position:relative;background:none;border:none;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#475569;transition:.2s;font-size:1rem}
     .notif-btn:hover{background:#f1f5f9;color:var(--sky)}
     .notif-badge{position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;border-radius:50%;width:17px;height:17px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
-    .user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f8fafc;border-radius:8px;font-size:.85rem;font-weight:600;color:#1e293b}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f8fafc;border-radius:8px;font-size:.83rem;font-weight:600;color:#1e293b;cursor:pointer;border:1px solid #e2e8f0;transition:.2s}
+    .user-chip:hover{background:#eff6ff;border-color:#bfdbfe}
     .user-avatar{width:28px;height:28px;border-radius:50%;background:var(--sky);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
-    /* NOTIFICATION PANEL */
-    .notif-panel{position:fixed;top:60px;right:0;width:360px;height:calc(100vh - 60px);background:#fff;border-left:1px solid #e2e8f0;z-index:200;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
+    /* NOTIF PANEL */
+    .notif-panel{position:fixed;top:60px;right:0;width:340px;height:calc(100vh - 60px);background:#fff;border-left:1px solid #e2e8f0;z-index:200;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
     .notif-panel.open{transform:translateX(0)}
-    .notif-panel-header{padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;background:#fff}
-    .notif-panel-header h3{font-size:.95rem;font-weight:700}
-    .notif-actions{display:flex;gap:8px}
-    .notif-mark-all{background:none;border:none;color:var(--sky);font-size:.78rem;font-weight:600;cursor:pointer}
-    .notif-close{background:none;border:none;font-size:1rem;cursor:pointer;color:var(--gray);padding:4px}
+    .notif-panel-header{padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+    .notif-panel-header h3{font-size:.9rem;font-weight:700}
     .notif-list{flex:1;overflow-y:auto;padding:8px}
-    .notif-item{padding:14px 16px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:.2s;position:relative}
+    .notif-item{padding:12px 14px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:.2s;position:relative}
     .notif-item.unread{background:#eff6ff;border-color:#dbeafe}
     .notif-item.read{background:#f8fafc}
-    .notif-item:hover{border-color:#bfdbfe}
-    .notif-dot{width:8px;height:8px;border-radius:50%;background:var(--sky);position:absolute;top:18px;right:14px}
-    .notif-title{font-size:.85rem;font-weight:700;color:#1e293b;padding-right:16px;line-height:1.3}
-    .notif-msg{font-size:.78rem;color:var(--gray);margin-top:4px;line-height:1.5}
-    .notif-time{font-size:.72rem;color:#94a3b8;margin-top:5px}
-    .notif-empty{text-align:center;padding:40px 20px;color:var(--gray)}
-    .notif-empty i{font-size:2rem;margin-bottom:8px;display:block;color:#cbd5e1}
+    .notif-dot{width:7px;height:7px;border-radius:50%;background:var(--sky);position:absolute;top:16px;right:12px}
+    .notif-title{font-size:.83rem;font-weight:700;padding-right:14px;line-height:1.3}
+    .notif-msg{font-size:.77rem;color:var(--gray);margin-top:3px;line-height:1.5}
+    .notif-time{font-size:.7rem;color:#94a3b8;margin-top:4px}
+    .notif-backdrop{display:none;position:fixed;inset:0;z-index:199}
+    .notif-backdrop.open{display:block}
     /* MAIN */
     .main{margin-left:260px;margin-top:60px;flex:1;padding:24px;min-height:calc(100vh - 60px)}
     .section{display:none}.section.active{display:block}
-    .page-header{margin-bottom:22px}
-    .page-header h1{font-size:1.5rem;font-weight:800;color:#1e293b}
-    .page-header p{color:var(--gray);margin-top:4px;font-size:.875rem}
-    /* CARDS */
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}
-    .stat-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid var(--sky)}
-    .stat-card .v{font-size:1.9rem;font-weight:800;color:var(--sky)}
-    .stat-card .l{font-size:.8rem;color:var(--gray);margin-top:3px;font-weight:500}
+    .page-header{margin-bottom:20px}
+    .page-header h1{font-size:1.4rem;font-weight:800}
+    .page-header p{color:var(--gray);margin-top:4px;font-size:.85rem}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:13px;margin-bottom:20px}
+    .stat-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid var(--sky)}
+    .stat-card .v{font-size:1.8rem;font-weight:800;color:var(--sky)}.stat-card .l{font-size:.78rem;color:var(--gray);margin-top:2px;font-weight:500}
     .card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden;margin-bottom:20px}
-    .card-header{padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-    .card-header h3{font-size:.95rem;font-weight:700}
-    /* TABLES */
+    .card-header{padding:13px 18px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+    .card-header h3{font-size:.9rem;font-weight:700}
     .tbl{width:100%;border-collapse:collapse}
-    .tbl th,.tbl td{padding:11px 14px;text-align:left;font-size:.825rem;border-bottom:1px solid #f1f5f9}
-    .tbl th{background:#f8fafc;font-weight:700;color:#475569;font-size:.78rem;text-transform:uppercase;letter-spacing:.4px}
+    .tbl th,.tbl td{padding:10px 13px;text-align:left;font-size:.8rem;border-bottom:1px solid #f1f5f9}
+    .tbl th{background:#f8fafc;font-weight:700;color:#475569;font-size:.75rem;text-transform:uppercase;letter-spacing:.4px}
     .tbl tr:hover td{background:#f8fafc}
-    /* BADGES */
-    .badge{padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:700;display:inline-block}
-    .b-pending{background:#fef3c7;color:#92400e}
-    .b-approved{background:#d1fae5;color:#065f46}
-    .b-rejected{background:#fee2e2;color:#991b1b}
-    .b-correction{background:#e0e7ff;color:#3730a3}
-    .b-resubmitted{background:#dbeafe;color:#1d4ed8}
-    .b-expired{background:#f3f4f6;color:#6b7280}
-    /* BUTTONS */
-    .btn{padding:8px 15px;border-radius:8px;border:none;cursor:pointer;font-size:.825rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
+    .badge{padding:3px 8px;border-radius:20px;font-size:.7rem;font-weight:700;display:inline-block}
+    .b-pending{background:#fef3c7;color:#92400e}.b-approved{background:#d1fae5;color:#065f46}
+    .b-rejected{background:#fee2e2;color:#991b1b}.b-correction{background:#e0e7ff;color:#3730a3}
+    .b-resubmitted{background:#dbeafe;color:#1d4ed8}.b-expired{background:#f3f4f6;color:#6b7280}
+    .btn{padding:7px 13px;border-radius:8px;border:none;cursor:pointer;font-size:.8rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all .2s}
     .btn-primary{background:var(--sky);color:#fff}.btn-primary:hover{background:#1d4ed8}
-    .btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#047857}
-    .btn-warning{background:var(--orange);color:#fff}.btn-warning:hover{background:#d97706}
-    .btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#b91c1c}
-    .btn-outline{background:#fff;border:1px solid #e2e8f0;color:#475569}.btn-outline:hover{background:#f8fafc}
-    .btn-gold{background:var(--gold);color:var(--navy)}.btn-gold:hover{background:#e6c05a}
-    .btn-sm{padding:5px 10px;font-size:.775rem}
-    /* MODAL */
+    .btn-success{background:var(--green);color:#fff}.btn-warning{background:var(--orange);color:#fff}
+    .btn-danger{background:var(--red);color:#fff}.btn-outline{background:#fff;border:1px solid #e2e8f0;color:#475569}
+    .btn-outline:hover{background:#f8fafc}.btn-gold{background:var(--gold);color:var(--navy)}
+    .btn-sm{padding:5px 9px;font-size:.75rem}
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;padding:16px}
     .modal-overlay.open{display:flex}
-    .modal{background:#fff;border-radius:16px;padding:26px;width:90%;max-width:580px;max-height:90vh;overflow-y:auto}
-    .modal h3{font-size:1.1rem;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px}
-    .form-group{margin-bottom:14px}
-    .form-group label{display:block;font-size:.825rem;font-weight:600;margin-bottom:5px;color:#374151}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;transition:border .2s;font-family:inherit}
+    .modal{background:#fff;border-radius:16px;padding:24px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto}
+    .modal h3{font-size:1rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;font-size:.8rem;font-weight:600;margin-bottom:4px;color:#374151}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:8px;font-size:.83rem;outline:none;transition:border .2s;font-family:inherit}
     .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-    .form-group textarea{resize:vertical;min-height:75px}
-    .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
-    /* DOC REQUIREMENTS */
-    .doc-req-box{background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-bottom:14px}
-    .doc-req-box h4{font-size:.82rem;font-weight:700;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-    .doc-req-list{list-style:none;display:flex;flex-direction:column;gap:5px}
-    .doc-req-list li{font-size:.8rem;color:#78350f;display:flex;align-items:flex-start;gap:6px}
-    .doc-req-list li::before{content:'📎';font-size:.75rem;margin-top:1px;flex-shrink:0}
-    .doc-file-group{margin-bottom:10px}
-    .doc-file-label{font-size:.8rem;font-weight:600;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:5px}
-    .doc-file-label .req{color:#ef4444;font-weight:700}
-    .file-input{width:100%;padding:8px;border:1px dashed #d1d5db;border-radius:6px;font-size:.8rem;background:#fafafa;cursor:pointer}
-    .file-input:hover{border-color:var(--sky);background:#eff6ff}
-    /* ALERT */
-    .alert{padding:11px 14px;border-radius:8px;font-size:.825rem;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
+    .form-group input:disabled{background:#f8fafc;color:#94a3b8}
+    .form-group textarea{resize:vertical;min-height:70px}
+    .form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+    .doc-req-box{background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:11px 13px;margin-bottom:12px}
+    .doc-req-box h4{font-size:.8rem;font-weight:700;color:#92400e;margin-bottom:7px}
+    .doc-req-list li{font-size:.78rem;color:#78350f;list-style:none;display:flex;align-items:flex-start;gap:5px;margin-bottom:3px}
+    .file-input{width:100%;padding:7px;border:1px dashed #d1d5db;border-radius:6px;font-size:.78rem;background:#fafafa;cursor:pointer}
+    .doc-file-label{font-size:.78rem;font-weight:600;color:#374151;margin-bottom:3px;display:flex;align-items:center;gap:4px}
+    .req{color:#ef4444;font-weight:700}
+    .alert{padding:10px 13px;border-radius:8px;font-size:.8rem;margin-bottom:12px;display:flex;align-items:flex-start;gap:7px}
     .alert-info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-    .alert-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
     .alert-warning{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
-    .alert-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-    /* CERT CARD */
-    .cert-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;border:1px solid #e2e8f0}
+    .alert-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+    .cert-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:13px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:13px;border:1px solid #e2e8f0}
     .cert-card.approved{border-color:#a7f3d0}
-    .cert-info h4{font-size:.95rem;font-weight:700;margin-bottom:4px}
-    .cert-info p{font-size:.8rem;color:var(--gray);margin-bottom:2px}
-    .cert-qr{text-align:center}
-    .cert-qr p{font-size:.65rem;color:#94a3b8;margin-top:3px}
-    /* TIMELINE */
-    .timeline{padding:4px 0}
-    .tl-item{display:flex;gap:14px;padding:12px 0 12px 18px;border-left:2px solid #e2e8f0;margin-left:10px;position:relative}
-    .tl-item::before{content:'';width:12px;height:12px;border-radius:50%;background:var(--sky);position:absolute;left:-7px;top:15px;border:2px solid #fff}
-    .tl-item.approved::before{background:var(--green)}
-    .tl-item.rejected::before{background:var(--red)}
-    .tl-item.correction_requested::before{background:var(--orange)}
-    .tl-item.certificate_issued::before{background:#8b5cf6}
-    .tl-content h4{font-size:.875rem;font-weight:700}
-    .tl-content p{font-size:.775rem;color:var(--gray);margin-top:2px;line-height:1.5}
-    .tl-time{font-size:.72rem;color:#94a3b8;margin-top:4px}
-    /* RENEWAL */
-    .renewal-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px;border-left:4px solid var(--orange);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
-    .renewal-card.expired{border-left-color:var(--red)}
-    /* MULTI APP */
-    .svc-checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:6px}
-    .svc-cb{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:.2s;font-size:.82rem}
+    .renewal-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:13px;border-left:4px solid var(--orange);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:13px}
+    .svc-checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;margin-top:6px}
+    .svc-cb{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:.8rem}
     .svc-cb:hover{border-color:var(--sky);background:#eff6ff}
-    .svc-cb input[type="checkbox"]{width:15px;height:15px;accent-color:var(--sky)}
-    /* LOADING / EMPTY */
+    .svc-cb input[type="checkbox"]{accent-color:var(--sky)}
+    .timeline{padding:4px 0}
+    .tl-item{display:flex;gap:13px;padding:11px 0 11px 16px;border-left:2px solid #e2e8f0;margin-left:10px;position:relative}
+    .tl-item::before{content:'';width:11px;height:11px;border-radius:50%;background:var(--sky);position:absolute;left:-7px;top:14px;border:2px solid #fff}
+    .tl-item.approved::before{background:var(--green)}.tl-item.rejected::before{background:var(--red)}
+    .tl-item.correction_requested::before{background:var(--orange)}.tl-item.certificate_issued::before{background:#8b5cf6}
+    .tl-content h4{font-size:.85rem;font-weight:700}.tl-content p{font-size:.75rem;color:var(--gray);margin-top:2px;line-height:1.5}
+    .tl-time{font-size:.7rem;color:#94a3b8;margin-top:3px}
     .loading{text-align:center;padding:40px;color:#94a3b8}
     .loading i{font-size:2rem;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .empty{text-align:center;padding:44px 24px;color:#94a3b8}
     .empty i{font-size:2.8rem;margin-bottom:12px;display:block}
-    /* SCHEME CHIPS */
-    .eligible-chip{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px;margin-top:6px}
-    /* OVERLAY BACKDROP */
-    .notif-backdrop{display:none;position:fixed;inset:0;z-index:199}
-    .notif-backdrop.open{display:block}
+    /* Profile */
+    .profile-avatar-big{width:80px;height:80px;border-radius:50%;background:var(--sky);color:#fff;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;margin:0 auto 16px;border:3px solid #bfdbfe}
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    /* Scheme card */
+    .scheme-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0}
+    .scheme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+    /* Ann card */
+    .ann-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid var(--sky);cursor:pointer;transition:.2s}
+    .ann-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
   </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>🏛️ Gram Panchayat</h2>
     <p id="user-greeting">Citizen Portal</p>
   </div>
-  <nav>
-    <ul>
-      <li><a href="#" class="active" onclick="showSection('home',this)"><i class="fas fa-home"></i> Home</a></li>
-      <li><a href="#" onclick="showSection('applications',this)"><i class="fas fa-file-alt"></i> My Applications</a></li>
-      <li><a href="#" onclick="showSection('certificates',this)"><i class="fas fa-scroll"></i> My Certificates</a></li>
-      <li><a href="#" onclick="showSection('corrections',this)"><i class="fas fa-edit"></i> Corrections <span id="corr-badge" style="background:#f59e0b;color:#fff;border-radius:20px;padding:1px 7px;font-size:.7rem;margin-left:4px;display:none"></span></a></li>
-      <li><a href="#" onclick="showSection('renewals',this)"><i class="fas fa-sync-alt"></i> Renewals <span id="ren-badge" style="background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:.7rem;margin-left:4px;display:none"></span></a></li>
-      <li><a href="#" onclick="showSection('multi',this)"><i class="fas fa-layer-group"></i> Multi-Application</a></li>
-      <li><a href="#" onclick="showSection('schemes',this)"><i class="fas fa-seedling"></i> Schemes</a></li>
-      <li><a href="#" onclick="showSection('announcements',this)"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-      <li><a href="#" onclick="showSection('timeline',this)"><i class="fas fa-stream"></i> My Timeline</a></li>
-    </ul>
-  </nav>
-  <div class="sidebar-footer">
-    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
-  </div>
+  <nav><ul>
+    <li><a href="#" class="active" onclick="showSection('home',this)"><i class="fas fa-home"></i> Home</a></li>
+    <li><a href="#" onclick="showSection('applications',this)"><i class="fas fa-file-alt"></i> My Applications</a></li>
+    <li><a href="#" onclick="showSection('certificates',this)"><i class="fas fa-scroll"></i> My Certificates</a></li>
+    <li><a href="#" onclick="showSection('corrections',this)"><i class="fas fa-edit"></i> Corrections <span id="corr-badge" style="background:#f59e0b;color:#fff;border-radius:20px;padding:1px 7px;font-size:.68rem;margin-left:4px;display:none"></span></a></li>
+    <li><a href="#" onclick="showSection('renewals',this)"><i class="fas fa-sync-alt"></i> Renewals <span id="ren-badge" style="background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:.68rem;margin-left:4px;display:none"></span></a></li>
+    <li><a href="#" onclick="showSection('multi',this)"><i class="fas fa-layer-group"></i> Multi-Application</a></li>
+    <li><a href="#" onclick="showSection('schemes',this)"><i class="fas fa-seedling"></i> Schemes</a></li>
+    <li><a href="#" onclick="showSection('announcements',this)"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+    <li><a href="#" onclick="showSection('timeline',this)"><i class="fas fa-stream"></i> My Timeline</a></li>
+    <li><a href="#" onclick="showSection('profile',this)"><i class="fas fa-user-circle"></i> My Profile</a></li>
+  </ul></nav>
+  <div class="sidebar-footer"><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
 </aside>
 
-<!-- TOPBAR -->
 <header class="topbar">
-  <div class="topbar-left">
-    <h3 id="section-title">Home</h3>
-  </div>
+  <div class="topbar-left"><h3 id="section-title">Home</h3></div>
   <div class="topbar-right">
-    <button class="notif-btn" onclick="toggleNotifPanel()" title="Notifications">
+    <button class="notif-btn" onclick="toggleNotifPanel()">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notif-badge" style="display:none">0</span>
     </button>
-    <div class="user-chip">
+    <div class="user-chip" onclick="showSection('profile', document.querySelector('.sidebar nav li:last-child a'))" title="View Profile">
       <div class="user-avatar" id="user-initial">C</div>
       <span id="citizen-name">Citizen</span>
     </div>
   </div>
 </header>
 
-<!-- NOTIFICATION BACKDROP -->
 <div class="notif-backdrop" id="notif-backdrop" onclick="closeNotifPanel()"></div>
-
-<!-- NOTIFICATION PANEL -->
 <div class="notif-panel" id="notif-panel">
   <div class="notif-panel-header">
     <h3><i class="fas fa-bell" style="color:var(--sky)"></i> Notifications</h3>
-    <div class="notif-actions">
-      <button class="notif-mark-all" onclick="markAllRead()">Mark all read</button>
-      <button class="notif-close" onclick="closeNotifPanel()"><i class="fas fa-times"></i></button>
+    <div style="display:flex;gap:8px">
+      <button style="background:none;border:none;color:var(--sky);font-size:.75rem;font-weight:600;cursor:pointer" onclick="markAllRead()">Mark all read</button>
+      <button style="background:none;border:none;font-size:1rem;cursor:pointer;color:var(--gray)" onclick="closeNotifPanel()"><i class="fas fa-times"></i></button>
     </div>
   </div>
-  <div class="notif-list" id="notif-list">
-    <div class="loading"><i class="fas fa-spinner"></i></div>
-  </div>
+  <div class="notif-list" id="notif-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
 </div>
 
-<!-- MAIN -->
 <main class="main">
 
   <!-- HOME -->
   <section id="sec-home" class="section active">
     <div class="page-header">
       <h1>Welcome back, <span id="citizen-name2">Citizen</span> 👋</h1>
-      <p>Here's an overview of your services and applications.</p>
+      <p>Overview of your services and applications</p>
     </div>
     <div class="stats-grid">
       <div class="stat-card"><div class="v" id="stat-total">–</div><div class="l">Total Applications</div></div>
@@ -236,7 +191,7 @@
     </div>
   </section>
 
-  <!-- MY APPLICATIONS -->
+  <!-- APPLICATIONS -->
   <section id="sec-applications" class="section">
     <div class="page-header"><h1>My Applications</h1><p>Track all your service applications</p></div>
     <div class="card">
@@ -247,13 +202,13 @@
 
   <!-- CERTIFICATES -->
   <section id="sec-certificates" class="section">
-    <div class="page-header"><h1>My Certificates</h1><p>View, download and verify your issued certificates</p></div>
+    <div class="page-header"><h1>My Certificates</h1><p>Download your issued certificates</p></div>
     <div id="certificates-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
   </section>
 
   <!-- CORRECTIONS -->
   <section id="sec-corrections" class="section">
-    <div class="page-header"><h1>Correction Requests</h1><p>Staff have requested corrections — review and resubmit.</p></div>
+    <div class="page-header"><h1>Correction Requests</h1><p>Resubmit applications where staff has requested corrections</p></div>
     <div class="card">
       <div class="card-header"><h3>Pending Corrections</h3></div>
       <div id="corrections-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
@@ -262,13 +217,13 @@
 
   <!-- RENEWALS -->
   <section id="sec-renewals" class="section">
-    <div class="page-header"><h1>Certificate Renewals</h1><p>Certificates expiring soon or already expired.</p></div>
+    <div class="page-header"><h1>Certificate Renewals</h1><p>Certificates expiring soon or already expired</p></div>
     <div id="renewals-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
   </section>
 
-  <!-- MULTI APPLICATION -->
+  <!-- MULTI APP -->
   <section id="sec-multi" class="section">
-    <div class="page-header"><h1>Multi-Certificate Application</h1><p>Apply for multiple certificates in a single request.</p></div>
+    <div class="page-header"><h1>Multi-Certificate Application</h1><p>Apply for multiple certificates in one request</p></div>
     <div class="card">
       <div class="card-header"><h3>My Multi-Applications</h3><button class="btn btn-primary btn-sm" onclick="openMultiModal()"><i class="fas fa-plus"></i> New Multi-Application</button></div>
       <div id="multi-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
@@ -277,7 +232,7 @@
 
   <!-- SCHEMES -->
   <section id="sec-schemes" class="section">
-    <div class="page-header"><h1>Government Schemes</h1><p>Schemes you may be eligible for based on your profile</p></div>
+    <div class="page-header"><h1>Government Schemes</h1><p>Schemes you are eligible for based on your profile</p></div>
     <div id="schemes-content"><div class="loading"><i class="fas fa-spinner"></i></div></div>
   </section>
 
@@ -289,49 +244,80 @@
 
   <!-- TIMELINE -->
   <section id="sec-timeline" class="section">
-    <div class="page-header"><h1>My Service Timeline</h1><p>Chronological record of all your Panchayat interactions</p></div>
+    <div class="page-header"><h1>My Service Timeline</h1></div>
     <div class="card">
       <div class="card-header"><h3>Activity History</h3></div>
-      <div style="padding:18px" id="timeline-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+      <div style="padding:16px" id="timeline-list"><div class="loading"><i class="fas fa-spinner"></i></div></div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="sec-profile" class="section">
+    <div class="page-header"><h1>My Profile</h1><p>View and edit your personal details</p></div>
+    <div class="card" style="max-width:680px">
+      <div class="card-header"><h3><i class="fas fa-user-circle" style="color:var(--sky)"></i> Personal Information</h3><button class="btn btn-primary btn-sm" onclick="saveProfile()"><i class="fas fa-save"></i> Save Changes</button></div>
+      <div style="padding:20px">
+        <div class="profile-avatar-big" id="profile-avatar">C</div>
+        <div class="alert alert-info" style="margin-bottom:16px"><i class="fas fa-info-circle"></i> Email and Aadhar number cannot be changed.</div>
+        <div class="profile-grid">
+          <div class="form-group"><label>Full Name</label><input type="text" id="p-name"/></div>
+          <div class="form-group"><label>Phone</label><input type="text" id="p-phone"/></div>
+          <div class="form-group"><label>Email (readonly)</label><input type="email" id="p-email" disabled/></div>
+          <div class="form-group"><label>Gender</label>
+            <select id="p-gender">
+              <option value="">– Select –</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Date of Birth</label><input type="date" id="p-dob"/></div>
+          <div class="form-group"><label>Occupation</label>
+            <select id="p-occupation">
+              <option value="">– Select –</option>
+              <option value="farmer">Farmer</option>
+              <option value="agriculture">Agricultural Worker</option>
+              <option value="tenant">Tenant Farmer / Sharecropper</option>
+              <option value="labour">Daily Wage Labour</option>
+              <option value="salaried">Salaried Employee</option>
+              <option value="business">Business / Self-employed</option>
+              <option value="student">Student</option>
+              <option value="housewife">Homemaker</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1"><label>Address</label><input type="text" id="p-address"/></div>
+          <div class="form-group"><label>Village</label><input type="text" id="p-village"/></div>
+          <div class="form-group"><label>Block</label><input type="text" id="p-block"/></div>
+          <div class="form-group"><label>District</label><input type="text" id="p-district"/></div>
+          <div class="form-group"><label>State</label><input type="text" id="p-state"/></div>
+          <div class="form-group"><label>Pincode</label><input type="text" id="p-pincode"/></div>
+        </div>
+      </div>
     </div>
   </section>
 
 </main>
 
-<!-- ======================== MODALS ======================== -->
-
-<!-- New Application Modal -->
+<!-- MODALS -->
 <div class="modal-overlay" id="new-app-modal">
   <div class="modal">
     <h3><i class="fas fa-file-alt" style="color:var(--sky)"></i> New Application</h3>
-    <div class="form-group">
-      <label>Select Service <span style="color:red">*</span></label>
-      <select id="app-service-id" onchange="onServiceChange()">
-        <option value="">-- Choose a service --</option>
-      </select>
+    <div class="form-group"><label>Select Service <span class="req">*</span></label>
+      <select id="app-service-id" onchange="onServiceChange()"><option value="">-- Choose a service --</option></select>
     </div>
     <div id="doc-requirements-box" style="display:none"></div>
-    <div class="form-group">
-      <label>Purpose <span style="color:red">*</span></label>
-      <input type="text" id="app-purpose" placeholder="e.g. Scholarship, Bank Loan, Passport"/>
-    </div>
-    <div class="form-group">
-      <label>Additional Details</label>
-      <textarea id="app-details" placeholder="Any additional information..."></textarea>
-    </div>
+    <div class="form-group"><label>Purpose <span class="req">*</span></label><input type="text" id="app-purpose" placeholder="e.g. Scholarship, Bank Loan"/></div>
+    <div class="form-group"><label>Additional Details</label><textarea id="app-details" placeholder="Any additional information..."></textarea></div>
     <div id="dynamic-doc-uploads"></div>
-    <div class="form-group">
-      <label>Other Documents (optional)</label>
-      <input type="file" id="app-docs" multiple accept=".pdf,.jpg,.jpeg,.png" class="file-input"/>
-    </div>
+    <div class="form-group"><label>Other Documents (optional)</label><input type="file" id="app-docs" multiple accept=".pdf,.jpg,.jpeg,.png" class="file-input"/></div>
     <div class="form-actions">
       <button class="btn btn-outline" onclick="closeModal('new-app-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitApplication()"><i class="fas fa-paper-plane"></i> Submit Application</button>
+      <button class="btn btn-primary" onclick="submitApplication()"><i class="fas fa-paper-plane"></i> Submit</button>
     </div>
   </div>
 </div>
 
-<!-- Resubmit Modal -->
 <div class="modal-overlay" id="resubmit-modal">
   <div class="modal">
     <h3><i class="fas fa-redo" style="color:var(--orange)"></i> Resubmit Corrected Application</h3>
@@ -346,15 +332,11 @@
   </div>
 </div>
 
-<!-- Multi Application Modal -->
 <div class="modal-overlay" id="multi-modal">
   <div class="modal">
     <h3><i class="fas fa-layer-group" style="color:var(--sky)"></i> Multi-Certificate Application</h3>
-    <div class="form-group"><label>Purpose (common for all) <span style="color:red">*</span></label><input type="text" id="multi-purpose" placeholder="e.g. Scholarship application, Govt scheme registration"/></div>
-    <div class="form-group">
-      <label>Select Certificates (minimum 2)</label>
-      <div class="svc-checkbox-grid" id="multi-svc-grid"></div>
-    </div>
+    <div class="form-group"><label>Common Purpose <span class="req">*</span></label><input type="text" id="multi-purpose" placeholder="e.g. Scholarship application"/></div>
+    <div class="form-group"><label>Select Services (minimum 2)</label><div class="svc-checkbox-grid" id="multi-svc-grid"></div></div>
     <div class="form-actions">
       <button class="btn btn-outline" onclick="closeModal('multi-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="submitMultiApp()"><i class="fas fa-paper-plane"></i> Submit All</button>
@@ -362,7 +344,6 @@
   </div>
 </div>
 
-<!-- Announcement Detail Modal -->
 <div class="modal-overlay" id="ann-modal">
   <div class="modal">
     <h3 id="ann-modal-title">Announcement</h3>
@@ -372,7 +353,6 @@
 </div>
 
 <script>
-// ── AUTH ───────────────────────────────────────
 const token = localStorage.getItem('token');
 const userType = localStorage.getItem('userType');
 if (!token) { window.location.href = '/'; }
@@ -386,36 +366,22 @@ async function apiFetch(url, opts = {}) {
     return await res.json();
   } catch(e) { return null; }
 }
-function logout() {
-  ['token','authToken','userType'].forEach(k => localStorage.removeItem(k));
-  window.location.href = '/';
-}
+function logout() { ['token','authToken','userType'].forEach(k=>localStorage.removeItem(k)); window.location.href='/'; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 
-// ── SECTION NAV ────────────────────────────────
-const sectionTitles = {
-  home:'Home', applications:'My Applications', certificates:'My Certificates',
-  corrections:'Corrections', renewals:'Renewals', multi:'Multi-Application',
-  schemes:'Government Schemes', announcements:'Announcements', timeline:'My Timeline'
-};
-const sectionLoaders = {
-  applications: loadApplications, certificates: loadCertificates,
-  corrections: loadCorrections, renewals: loadRenewals,
-  multi: loadMultiApps, schemes: loadSchemes,
-  announcements: loadAnnouncements, timeline: loadTimeline
-};
+const sectionTitles = {home:'Home',applications:'My Applications',certificates:'My Certificates',corrections:'Corrections',renewals:'Renewals',multi:'Multi-Application',schemes:'Government Schemes',announcements:'Announcements',timeline:'My Timeline',profile:'My Profile'};
+const sectionLoaders = {applications:loadApplications,certificates:loadCertificates,corrections:loadCorrections,renewals:loadRenewals,multi:loadMultiApps,schemes:loadSchemes,announcements:loadAnnouncements,timeline:loadTimeline,profile:loadProfile};
 
 function showSection(name, linkEl) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
-  document.getElementById('sec-' + name).classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
   if (linkEl) linkEl.classList.add('active');
-  document.getElementById('section-title').textContent = sectionTitles[name] || name;
+  document.getElementById('section-title').textContent = sectionTitles[name]||name;
   if (sectionLoaders[name]) sectionLoaders[name]();
 }
 
-// ── INIT ───────────────────────────────────────
 let citizenPayload = {};
 window.onload = async () => {
   try {
@@ -425,6 +391,7 @@ window.onload = async () => {
     document.getElementById('citizen-name2').textContent = name;
     document.getElementById('user-greeting').textContent = name;
     document.getElementById('user-initial').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('profile-avatar').textContent = name.charAt(0).toUpperCase();
   } catch(e) {}
   await Promise.all([loadHomeStats(), loadServices(), loadNotifications()]);
   checkRenewalsNotif();
@@ -432,281 +399,150 @@ window.onload = async () => {
 
 // ── NOTIFICATIONS ──────────────────────────────
 let notifications = [];
-
 function toggleNotifPanel() {
-  const panel = document.getElementById('notif-panel');
-  const backdrop = document.getElementById('notif-backdrop');
-  panel.classList.toggle('open');
-  backdrop.classList.toggle('open');
-  if (panel.classList.contains('open')) loadNotifications();
+  const p = document.getElementById('notif-panel'), b = document.getElementById('notif-backdrop');
+  p.classList.toggle('open'); b.classList.toggle('open');
+  if (p.classList.contains('open')) loadNotifications();
 }
-function closeNotifPanel() {
-  document.getElementById('notif-panel').classList.remove('open');
-  document.getElementById('notif-backdrop').classList.remove('open');
-}
-
+function closeNotifPanel() { document.getElementById('notif-panel').classList.remove('open'); document.getElementById('notif-backdrop').classList.remove('open'); }
 async function loadNotifications() {
   const data = await apiFetch('/api/citizen/notifications');
   notifications = data || [];
-  renderNotifications();
-  updateNotifBadge();
+  renderNotifications(); updateNotifBadge();
 }
-
 function renderNotifications() {
   const el = document.getElementById('notif-list');
-  if (!notifications.length) {
-    el.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><p>No notifications yet</p></div>';
-    return;
-  }
+  if (!notifications.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8"><i class="fas fa-bell-slash" style="font-size:2rem;display:block;margin-bottom:8px"></i>No notifications yet</div>'; return; }
   el.innerHTML = notifications.map(n => `
-    <div class="notif-item ${n.is_read ? 'read' : 'unread'}" onclick="markRead(${n.notification_id})">
-      ${!n.is_read ? '<div class="notif-dot"></div>' : ''}
+    <div class="notif-item ${n.is_read?'read':'unread'}" onclick="handleNotifClick(${n.notification_id}, ${n.application_id||null})">
+      ${!n.is_read?'<div class="notif-dot"></div>':''}
       <div class="notif-title">${n.title}</div>
       <div class="notif-msg">${n.message}</div>
       <div class="notif-time"><i class="fas fa-clock"></i> ${formatDate(n.sent_at)}</div>
     </div>`).join('');
 }
-
 function updateNotifBadge() {
-  const unread = notifications.filter(n => !n.is_read).length;
+  const unread = notifications.filter(n=>!n.is_read).length;
   const badge = document.getElementById('notif-badge');
-  if (unread > 0) { badge.textContent = unread > 9 ? '9+' : unread; badge.style.display = 'flex'; }
-  else { badge.style.display = 'none'; }
+  if (unread>0) { badge.textContent=unread>9?'9+':unread; badge.style.display='flex'; } else { badge.style.display='none'; }
 }
-
-async function markRead(id) {
-  await apiFetch(`/api/citizen/notifications/${id}/read`, { method: 'PATCH' });
-  notifications = notifications.map(n => n.notification_id === id ? {...n, is_read: 1} : n);
-  renderNotifications();
-  updateNotifBadge();
+async function handleNotifClick(id, appId) {
+  await apiFetch(`/api/citizen/notifications/${id}/read`, {method:'PATCH'});
+  notifications = notifications.map(n=>n.notification_id===id?{...n,is_read:1}:n);
+  renderNotifications(); updateNotifBadge(); closeNotifPanel();
+  // Navigate based on notification type
+  if (appId) {
+    const title = notifications.find(n=>n.notification_id===id)?.title || '';
+    if (title.includes('Approved') || title.includes('Certificate')) {
+      showSection('certificates', document.querySelectorAll('.sidebar nav a')[2]);
+    } else if (title.includes('Correction')) {
+      showSection('corrections', document.querySelectorAll('.sidebar nav a')[3]);
+    } else {
+      showSection('applications', document.querySelectorAll('.sidebar nav a')[1]);
+    }
+  }
 }
-
 async function markAllRead() {
-  await apiFetch('/api/citizen/notifications/read-all', { method: 'PATCH' });
-  notifications = notifications.map(n => ({...n, is_read: 1}));
-  renderNotifications();
-  updateNotifBadge();
+  await apiFetch('/api/citizen/notifications/read-all', {method:'PATCH'});
+  notifications = notifications.map(n=>({...n,is_read:1}));
+  renderNotifications(); updateNotifBadge();
 }
-
 async function checkRenewalsNotif() {
   const certs = await apiFetch('/api/citizen/certificates/renewable');
-  if (certs && certs.length > 0) {
-    const ren = document.getElementById('ren-badge');
-    ren.textContent = certs.length;
-    ren.style.display = 'inline';
-  }
+  if (certs && certs.length) { const b=document.getElementById('ren-badge'); b.textContent=certs.length; b.style.display='inline'; }
 }
 
-// ── SERVICE DOCUMENT REQUIREMENTS ─────────────
-// Real document requirements per service type (researched from official sources)
+// ── SERVICE DOC REQUIREMENTS ───────────────────
 const SERVICE_DOCS = {
-  'birth': {
-    label: 'Birth Certificate',
-    docs: [
-      { id: 'hospital_record', label: 'Hospital/Birth Record from Doctor or Hospital', required: true },
-      { id: 'parent_aadhar', label: 'Parent Aadhar Card (both if available)', required: true },
-      { id: 'marriage_cert', label: 'Parent Marriage Certificate', required: false },
-      { id: 'parent_id', label: 'Parent Photo ID (Voter ID / Passport)', required: true },
-    ]
-  },
-  'death': {
-    label: 'Death Certificate',
-    docs: [
-      { id: 'death_cert_doctor', label: 'Doctor/Hospital Death Certificate (Form 4A/Medical Certificate of Cause of Death)', required: true },
-      { id: 'deceased_aadhar', label: 'Aadhar Card of Deceased Person', required: true },
-      { id: 'applicant_id', label: 'Photo ID of Applicant (Aadhar/Voter ID/Passport)', required: true },
-      { id: 'fir_if_accidental', label: 'FIR Copy (only if accidental/unnatural death)', required: false },
-    ]
-  },
-  'caste': {
-    label: 'Caste Certificate',
-    docs: [
-      { id: 'aadhar', label: 'Aadhar Card', required: true },
-      { id: 'ration_card', label: 'Ration Card', required: true },
-      { id: 'parent_caste_cert', label: 'Parent\'s Caste Certificate (if already obtained)', required: false },
-      { id: 'affidavit', label: 'Self-declaration Affidavit on Rs.50 stamp paper', required: true },
-      { id: 'school_cert', label: 'School Transfer Certificate (for community proof)', required: false },
-    ]
-  },
-  'income': {
-    label: 'Income Certificate',
-    docs: [
-      { id: 'aadhar', label: 'Aadhar Card', required: true },
-      { id: 'ration_card', label: 'Ration Card', required: true },
-      { id: 'salary_slip', label: 'Salary Slip (last 3 months) or Income Affidavit', required: true },
-      { id: 'bank_passbook', label: 'Bank Passbook (last 6 months)', required: true },
-      { id: 'land_records', label: 'Land Records / Patta (if agricultural income)', required: false },
-    ]
-  },
-  'residence': {
-    label: 'Residence Certificate',
-    docs: [
-      { id: 'aadhar', label: 'Aadhar Card (with current address)', required: true },
-      { id: 'utility_bill', label: 'Utility Bill (Electricity/Water/Gas - within 3 months)', required: true },
-      { id: 'ration_card', label: 'Ration Card', required: false },
-      { id: 'voter_id', label: 'Voter ID', required: false },
-      { id: 'rent_agreement', label: 'Rent Agreement (if rented house)', required: false },
-    ]
-  },
-  'agriculture': {
-    label: 'Agriculture Certificate',
-    docs: [
-      { id: 'aadhar', label: 'Aadhar Card', required: true },
-      { id: 'land_records', label: 'Land Records (Patta / 7-12 Extract / Khasra)', required: true },
-      { id: 'ration_card', label: 'Ration Card', required: true },
-      { id: 'farmer_id', label: 'Farmer Registration ID (Kisan ID) if available', required: false },
-    ]
-  },
-  'character': {
-    label: 'Character Certificate',
-    docs: [
-      { id: 'aadhar', label: 'Aadhar Card', required: true },
-      { id: 'photo_id', label: 'Photo ID (Voter ID / Passport)', required: true },
-      { id: 'passport_photo', label: '2 Passport Size Photographs', required: true },
-      { id: 'self_declaration', label: 'Self-declaration Affidavit', required: true },
-    ]
-  },
-  'dependant': {
-    label: 'Dependant Certificate',
-    docs: [
-      { id: 'applicant_aadhar', label: 'Aadhar Card of Applicant', required: true },
-      { id: 'dependant_aadhar', label: 'Aadhar Card of Dependant Person', required: true },
-      { id: 'ration_card', label: 'Family Ration Card', required: true },
-      { id: 'relationship_proof', label: 'Relationship Proof (Birth/Marriage Certificate)', required: true },
-    ]
-  }
+  'birth':{label:'Birth Certificate',docs:[{id:'hospital_record',label:'Hospital/Birth Record',required:true},{id:'parent_aadhar',label:'Parent Aadhar Card',required:true},{id:'parent_id',label:'Parent Photo ID',required:true},{id:'marriage_cert',label:'Parent Marriage Certificate',required:false}]},
+  'death':{label:'Death Certificate',docs:[{id:'death_cert',label:'Doctor/Hospital Death Certificate',required:true},{id:'deceased_aadhar',label:'Aadhar of Deceased',required:true},{id:'applicant_id',label:'Applicant Photo ID',required:true},{id:'fir',label:'FIR Copy (if accidental death)',required:false}]},
+  'caste':{label:'Caste Certificate',docs:[{id:'aadhar',label:'Aadhar Card',required:true},{id:'ration',label:'Ration Card',required:true},{id:'affidavit',label:'Self-declaration Affidavit',required:true},{id:'parent_cert',label:'Parent Caste Certificate',required:false}]},
+  'income':{label:'Income Certificate',docs:[{id:'aadhar',label:'Aadhar Card',required:true},{id:'salary',label:'Salary Slip / Income Affidavit',required:true},{id:'bank',label:'Bank Passbook',required:true},{id:'ration',label:'Ration Card',required:false}]},
+  'residence':{label:'Residence Certificate',docs:[{id:'aadhar',label:'Aadhar Card',required:true},{id:'utility',label:'Utility Bill (within 3 months)',required:true},{id:'voter',label:'Voter ID',required:false},{id:'rent',label:'Rent Agreement (if rented)',required:false}]},
+  'agriculture':{label:'Agriculture Certificate',docs:[{id:'aadhar',label:'Aadhar Card',required:true},{id:'land',label:'Land Records (Patta/Khasra)',required:true},{id:'ration',label:'Ration Card',required:true}]},
+  'character':{label:'Character Certificate',docs:[{id:'aadhar',label:'Aadhar Card',required:true},{id:'photo_id',label:'Photo ID',required:true},{id:'photos',label:'2 Passport Photographs',required:true},{id:'declaration',label:'Self-declaration Affidavit',required:true}]},
+  'dependenc':{label:'Dependency Certificate',docs:[{id:'applicant_aadhar',label:'Applicant Aadhar',required:true},{id:'dependent_aadhar',label:'Dependent Person Aadhar',required:true},{id:'ration',label:'Family Ration Card',required:true},{id:'relation',label:'Relationship Proof',required:true}]},
+  'no objection':{label:'No Objection Certificate',docs:[{id:'aadhar',label:'Aadhar Card',required:true},{id:'letter',label:'Application Letter',required:true}]},
+  'family':{label:'Family Member Certificate',docs:[{id:'ration',label:'Ration Card',required:true},{id:'aadhar',label:'Aadhar of Family Members',required:true},{id:'address',label:'Address Proof',required:true}]},
 };
-
-function matchServiceDocs(serviceName) {
-  if (!serviceName) return null;
-  const name = serviceName.toLowerCase();
-  for (const [key, val] of Object.entries(SERVICE_DOCS)) {
-    if (name.includes(key)) return { key, ...val };
-  }
+function matchServiceDocs(svcName) {
+  if (!svcName) return null;
+  const name = svcName.toLowerCase();
+  for (const [key,val] of Object.entries(SERVICE_DOCS)) { if (name.includes(key)) return val; }
   return null;
 }
 
 let allServices = [];
-
 async function loadServices() {
   const services = await apiFetch('/api/citizen/services');
   allServices = services || [];
   const sel = document.getElementById('app-service-id');
-  sel.innerHTML = '<option value="">-- Choose a service --</option>' +
-    allServices.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('');
+  sel.innerHTML = '<option value="">-- Choose a service --</option>' + allServices.map(s=>`<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('');
 }
-
 function onServiceChange() {
   const sel = document.getElementById('app-service-id');
-  const opt = sel.options[sel.selectedIndex];
-  const svcName = opt ? opt.dataset.name || opt.textContent : '';
+  const svcName = sel.options[sel.selectedIndex]?.dataset.name || sel.options[sel.selectedIndex]?.textContent || '';
   const reqBox = document.getElementById('doc-requirements-box');
   const dynUploads = document.getElementById('dynamic-doc-uploads');
-
   const match = matchServiceDocs(svcName);
   if (match) {
-    reqBox.style.display = 'block';
-    reqBox.innerHTML = `
-      <div class="doc-req-box">
-        <h4><i class="fas fa-exclamation-circle"></i> Required Documents for ${match.label}</h4>
-        <ul class="doc-req-list">${match.docs.map(d =>
-          `<li>${d.label} ${d.required ? '<strong style="color:#b45309">(Mandatory)</strong>' : '(If available)'}</li>`
-        ).join('')}</ul>
-      </div>`;
-    dynUploads.innerHTML = match.docs.map(d => `
-      <div class="doc-file-group">
-        <div class="doc-file-label">
-          <i class="fas fa-upload" style="color:#64748b"></i>
-          ${d.label} ${d.required ? '<span class="req">*</span>' : ''}
-        </div>
-        <input type="file" class="file-input doc-upload" data-doc="${d.id}" data-required="${d.required}"
-               accept=".pdf,.jpg,.jpeg,.png" placeholder="${d.label}"/>
-      </div>`).join('');
-  } else {
-    reqBox.style.display = 'none';
-    dynUploads.innerHTML = '';
-  }
+    reqBox.style.display='block';
+    reqBox.innerHTML=`<div class="doc-req-box"><h4><i class="fas fa-exclamation-circle"></i> Required Documents for ${match.label}</h4><ul class="doc-req-list">${match.docs.map(d=>`<li>📎 ${d.label} ${d.required?'<strong style="color:#b45309">(Mandatory)</strong>':'(If available)'}</li>`).join('')}</ul></div>`;
+    dynUploads.innerHTML=match.docs.map(d=>`<div style="margin-bottom:8px"><div class="doc-file-label"><i class="fas fa-upload" style="color:#64748b"></i> ${d.label} ${d.required?'<span class="req">*</span>':''}</div><input type="file" class="file-input doc-upload" data-doc="${d.id}" data-required="${d.required}" accept=".pdf,.jpg,.jpeg,.png"/></div>`).join('');
+  } else { reqBox.style.display='none'; dynUploads.innerHTML=''; }
 }
 
-// ── HOME STATS ─────────────────────────────────
+// ── HOME ────────────────────────────────────────
 async function loadHomeStats() {
-  const [apps, certs] = await Promise.all([
-    apiFetch('/api/citizen/applications'),
-    apiFetch('/api/citizen/certificates')
-  ]);
+  const [apps, certs] = await Promise.all([apiFetch('/api/citizen/applications'), apiFetch('/api/citizen/certificates')]);
   if (!apps) return;
   document.getElementById('stat-total').textContent = apps.length;
-  document.getElementById('stat-pending').textContent = apps.filter(a => a.status === 'pending').length;
-  document.getElementById('stat-approved').textContent = apps.filter(a => a.status === 'approved').length;
-  document.getElementById('stat-certs').textContent = (certs || []).length;
-
-  const recent = apps.slice(0, 5);
+  document.getElementById('stat-pending').textContent = apps.filter(a=>a.status==='pending').length;
+  document.getElementById('stat-approved').textContent = apps.filter(a=>a.status==='approved').length;
+  document.getElementById('stat-certs').textContent = (certs||[]).length;
+  const recent = apps.slice(0,5);
   const el = document.getElementById('home-recent');
-  el.innerHTML = recent.length ? `
-    <table class="tbl">
-      <thead><tr><th>Service</th><th>Purpose</th><th>Date</th><th>Status</th></tr></thead>
-      <tbody>${recent.map(a => `<tr>
-        <td>${a.service_name || '–'}</td>
-        <td>${a.purpose || '–'}</td>
-        <td>${formatDate(a.created_at)}</td>
-        <td>${badge(a.status)}</td>
-      </tr>`).join('')}</tbody>
-    </table>` : '<div class="empty"><i class="fas fa-inbox"></i><p>No applications yet.</p></div>';
-
-  // Badge updates
-  const corrections = apps.filter(a => a.status === 'correction_required').length;
-  const cb = document.getElementById('corr-badge');
-  if (corrections > 0) { cb.textContent = corrections; cb.style.display = 'inline'; }
+  el.innerHTML = recent.length ? `<table class="tbl"><thead><tr><th>Service</th><th>Purpose</th><th>Date</th><th>Status</th></tr></thead><tbody>${recent.map(a=>`<tr><td>${a.service_name||'–'}</td><td>${a.purpose||'–'}</td><td>${formatDate(a.created_at)}</td><td>${badge(a.status)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty"><i class="fas fa-inbox"></i><p>No applications yet.</p></div>';
+  const corrections = apps.filter(a=>a.status==='correction_required').length;
+  if (corrections>0) { const cb=document.getElementById('corr-badge'); cb.textContent=corrections; cb.style.display='inline'; }
 }
 
-// ── APPLICATIONS ───────────────────────────────
+// ── APPLICATIONS ────────────────────────────────
 async function loadApplications() {
   const apps = await apiFetch('/api/citizen/applications');
   const el = document.getElementById('applications-list');
-  if (!apps || !apps.length) { el.innerHTML = '<div class="empty"><i class="fas fa-inbox"></i><p>No applications yet.</p></div>'; return; }
-  el.innerHTML = `<table class="tbl">
-    <thead><tr><th>Service</th><th>Purpose</th><th>Submitted</th><th>Status</th><th>Remarks</th></tr></thead>
-    <tbody>${apps.map(a => `<tr>
-      <td><strong>${a.service_name}</strong></td>
-      <td>${a.purpose || '–'}</td>
-      <td>${formatDate(a.created_at)}</td>
-      <td>${badge(a.status)}</td>
-      <td style="font-size:.78rem;color:#64748b;max-width:180px">${a.staff_remarks || '–'}</td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  if (!apps||!apps.length) { el.innerHTML='<div class="empty"><i class="fas fa-inbox"></i><p>No applications yet.</p></div>'; return; }
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Service</th><th>Purpose</th><th>Submitted</th><th>Status</th><th>Staff Remarks</th></tr></thead><tbody>${apps.map(a=>`<tr><td><strong>${a.service_name}</strong></td><td>${a.purpose||'–'}</td><td>${formatDate(a.created_at)}</td><td>${badge(a.status)}</td><td style="font-size:.75rem;color:#64748b;max-width:160px">${a.staff_remarks||'–'}</td></tr>`).join('')}</tbody></table>`;
 }
 
-// ── CERTIFICATES ───────────────────────────────
+// ── CERTIFICATES ────────────────────────────────
 async function loadCertificates() {
   const certs = await apiFetch('/api/citizen/certificates');
   const el = document.getElementById('certificates-list');
-  if (!certs || !certs.length) { el.innerHTML = '<div class="empty"><i class="fas fa-scroll"></i><p>No certificates issued yet.</p></div>'; return; }
-
-  el.innerHTML = certs.map((c, i) => `
+  if (!certs||!certs.length) { el.innerHTML='<div class="empty"><i class="fas fa-scroll"></i><p>No certificates issued yet.</p></div>'; return; }
+  el.innerHTML = certs.map(c => `
     <div class="cert-card approved">
-      <div class="cert-info">
-        <h4>🏛️ ${c.service_name}</h4>
-        <p><i class="fas fa-hashtag" style="color:#94a3b8"></i> <strong>Cert No:</strong> ${c.certificate_number}</p>
-        <p><i class="fas fa-calendar-check" style="color:var(--green)"></i> <strong>Issued:</strong> ${formatDate(c.issued_at)}</p>
-        <p><i class="fas fa-calendar-times" style="color:var(--orange)"></i> <strong>Valid Until:</strong> ${c.expiry_date ? formatDate(c.expiry_date) : 'N/A'}</p>
-        <p><i class="fas fa-tag" style="color:#94a3b8"></i> <strong>Purpose:</strong> ${c.purpose || '–'}</p>
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <a href="/verify/${c.verification_hash}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-shield-alt"></i> Verify</a>
-          <button class="btn btn-gold btn-sm" onclick="downloadCert(${c.id})"><i class="fas fa-download"></i> Download PDF</button>
-        </div>
+      <div>
+        <h4 style="font-size:.95rem;font-weight:700;margin-bottom:6px">🏛️ ${c.service_name}</h4>
+        <p style="font-size:.8rem;color:#475569;margin-bottom:2px"><strong>Certificate No:</strong> ${c.certificate_number}</p>
+        <p style="font-size:.8rem;color:#475569;margin-bottom:2px"><strong>Application ID:</strong> APP${c.application_id}</p>
+        <p style="font-size:.8rem;color:var(--green);margin-bottom:2px"><i class="fas fa-calendar-check"></i> <strong>Issued:</strong> ${formatDate(c.issued_at)}</p>
+        <p style="font-size:.8rem;color:var(--orange);margin-bottom:2px"><i class="fas fa-calendar-times"></i> <strong>Valid Until:</strong> ${c.expiry_date?formatDate(c.expiry_date):'N/A'}</p>
+        <p style="font-size:.8rem;color:#94a3b8;margin-bottom:10px"><strong>Purpose:</strong> ${c.purpose||'–'}</p>
+        <button class="btn btn-gold btn-sm" onclick="downloadCert(${c.id})"><i class="fas fa-download"></i> Download Certificate</button>
       </div>
-      <div class="cert-qr">
+      <div style="text-align:center">
         <div id="qr-${c.id}"></div>
-        <p>Scan to verify</p>
+        <p style="font-size:.65rem;color:#94a3b8;margin-top:3px">Scan to verify</p>
       </div>
     </div>`).join('');
 
   certs.forEach(c => {
     if (c.verification_hash) {
       try {
-        new QRCode(document.getElementById('qr-' + c.id), {
-          text: window.location.origin + '/verify/' + c.verification_hash,
-          width: 90, height: 90
+        new QRCode(document.getElementById('qr-'+c.id), {
+          text: `application_id: APP${c.application_id}\nhash: ${c.verification_hash}`,
+          width:90, height:90
         });
       } catch(e) {}
     }
@@ -714,273 +550,195 @@ async function loadCertificates() {
 }
 
 function downloadCert(id) {
-  window.open(`/api/citizen/certificates/${id}/download?token=${token}`, '_blank');
+  // Open in new tab using token as query param (works cross-origin and on Render)
+  window.open(`/api/citizen/certificates/${id}/download?token=${encodeURIComponent(token)}`, '_blank');
 }
 
-// ── CORRECTIONS ────────────────────────────────
+// ── CORRECTIONS ─────────────────────────────────
 async function loadCorrections() {
   const data = await apiFetch('/api/citizen/corrections');
   const el = document.getElementById('corrections-list');
-  if (!data || !data.length) {
-    el.innerHTML = '<div class="empty" style="padding:44px"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>No correction requests. All good!</p></div>';
-    return;
-  }
-  el.innerHTML = `<table class="tbl">
-    <thead><tr><th>Service</th><th>Reason</th><th>Documents Required</th><th>Status</th><th>Action</th></tr></thead>
-    <tbody>${data.map(c => `<tr>
-      <td>${c.service_name}</td>
-      <td>${c.correction_reason}</td>
-      <td style="font-size:.78rem">${c.required_documents || '–'}</td>
-      <td>${badge(c.status)}</td>
-      <td>${c.status === 'pending' ?
-        `<button class="btn btn-warning btn-sm" onclick="openResubmit(${c.id},'${encodeURIComponent(c.correction_reason)}','${encodeURIComponent(c.required_documents||'')}')"><i class="fas fa-redo"></i> Resubmit</button>` :
-        '<span style="color:var(--green);font-size:.8rem;font-weight:600">✓ Submitted</span>'}</td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  if (!data||!data.length) { el.innerHTML='<div class="empty" style="padding:40px"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>No correction requests!</p></div>'; return; }
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Service</th><th>Reason</th><th>Documents Required</th><th>Status</th><th>Action</th></tr></thead><tbody>${data.map(c=>`<tr><td>${c.service_name}</td><td>${c.correction_reason}</td><td style="font-size:.75rem">${c.required_documents||'–'}</td><td>${badge(c.status)}</td><td>${c.status==='pending'?`<button class="btn btn-warning btn-sm" onclick="openResubmit(${c.id},'${encodeURIComponent(c.correction_reason)}','${encodeURIComponent(c.required_documents||'')}')"><i class="fas fa-redo"></i> Resubmit</button>`:'<span style="color:var(--green);font-size:.8rem">✓ Submitted</span>'}</td></tr>`).join('')}</tbody></table>`;
 }
-
-function openResubmit(id, reason, docs) {
-  document.getElementById('correction-id').value = id;
-  document.getElementById('correction-reason-display').innerHTML =
-    `<strong>📋 Staff requires:</strong> ${decodeURIComponent(reason)}<br><strong>📎 Documents needed:</strong> ${decodeURIComponent(docs)}`;
+function openResubmit(id,reason,docs) {
+  document.getElementById('correction-id').value=id;
+  document.getElementById('correction-reason-display').innerHTML=`<strong>📋 Required:</strong> ${decodeURIComponent(reason)}<br><strong>📎 Documents:</strong> ${decodeURIComponent(docs)}`;
   openModal('resubmit-modal');
 }
-
 async function submitCorrection() {
-  const id = document.getElementById('correction-id').value;
-  const notes = document.getElementById('correction-notes').value;
-  const formData = new FormData();
-  formData.append('correction_notes', notes);
-  const files = document.getElementById('correction-docs').files;
-  for (let f of files) formData.append('documents', f);
-  const res = await fetch(`/api/citizen/corrections/${id}/resubmit`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-  const data = await res.json();
-  if (data.success) { closeModal('resubmit-modal'); showToast('✅ Resubmitted successfully!', 'success'); loadCorrections(); }
-  else showToast(data.error || 'Failed to resubmit', 'error');
+  const id=document.getElementById('correction-id').value;
+  const notes=document.getElementById('correction-notes').value;
+  const formData=new FormData(); formData.append('correction_notes',notes);
+  const files=document.getElementById('correction-docs').files;
+  for (let f of files) formData.append('documents',f);
+  const res=await fetch(`/api/citizen/corrections/${id}/resubmit`,{method:'POST',headers:{'Authorization':'Bearer '+token},body:formData});
+  const data=await res.json();
+  if (data.success) { closeModal('resubmit-modal'); showToast('✅ Resubmitted successfully!','success'); loadCorrections(); }
+  else showToast(data.error||'Failed','error');
 }
 
-// ── RENEWALS ───────────────────────────────────
+// ── RENEWALS ────────────────────────────────────
 async function loadRenewals() {
   const certs = await apiFetch('/api/citizen/certificates/renewable');
   const el = document.getElementById('renewals-list');
-  if (!certs || !certs.length) {
-    el.innerHTML = '<div class="empty"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>No certificates due for renewal!</p></div>';
-    return;
-  }
-  el.innerHTML = certs.map(c => `
-    <div class="renewal-card ${c.expiry_status === 'expired' ? 'expired' : ''}">
-      <div>
-        <h4 style="font-size:.95rem;font-weight:700">${c.service_name}</h4>
-        <p style="font-size:.8rem;color:var(--gray);margin-top:3px">Cert No: ${c.certificate_number}</p>
-        <p style="font-size:.8rem;margin-top:3px">Expires: <strong>${formatDate(c.expiry_date)}</strong></p>
-        <span class="badge ${c.expiry_status === 'expired' ? 'b-rejected' : 'b-pending'}" style="margin-top:6px">
-          ${c.expiry_status === 'expired' ? '⚠️ Expired' : '⏰ Expiring Soon'}
-        </span>
-      </div>
-      <button class="btn btn-primary btn-sm" onclick="renewCert(${c.id}, this)"><i class="fas fa-sync-alt"></i> Renew Now</button>
-    </div>`).join('');
+  if (!certs||!certs.length) { el.innerHTML='<div class="empty"><i class="fas fa-check-circle" style="color:var(--green)"></i><p>No certificates due for renewal!</p></div>'; return; }
+  el.innerHTML=certs.map(c=>`<div class="renewal-card ${c.expiry_status==='expired'?'':''}"><div><h4 style="font-size:.9rem;font-weight:700">${c.service_name}</h4><p style="font-size:.78rem;color:var(--gray)">Cert No: ${c.certificate_number}</p><p style="font-size:.78rem;margin-top:3px">Expires: <strong>${formatDate(c.expiry_date)}</strong></p><span class="badge ${c.expiry_status==='expired'?'b-rejected':'b-pending'}" style="margin-top:5px;display:inline-block">${c.expiry_status==='expired'?'⚠️ Expired':'⏰ Expiring Soon'}</span></div><button class="btn btn-primary btn-sm" onclick="renewCert(${c.id},this)"><i class="fas fa-sync-alt"></i> Renew Now</button></div>`).join('');
+}
+async function renewCert(certId,btn) {
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+  const data=await apiFetch(`/api/citizen/certificates/${certId}/renew`,{method:'POST'});
+  if (data&&data.success) { showToast('🔄 Renewal submitted!','success'); loadRenewals(); }
+  else { showToast(data?.error||'Failed','error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-sync-alt"></i> Renew Now'; }
 }
 
-async function renewCert(certId, btn) {
-  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
-  const data = await apiFetch(`/api/citizen/certificates/${certId}/renew`, { method: 'POST' });
-  if (data && data.success) { showToast('🔄 Renewal application submitted!', 'success'); loadRenewals(); }
-  else { showToast(data?.error || 'Failed', 'error'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Renew Now'; }
-}
-
-// ── MULTI APPLICATION ──────────────────────────
+// ── MULTI ────────────────────────────────────────
 async function loadMultiApps() {
-  const data = await apiFetch('/api/citizen/multi-application');
-  const el = document.getElementById('multi-list');
-  if (!data || !data.length) { el.innerHTML = '<div class="empty"><i class="fas fa-layer-group"></i><p>No multi-applications yet.</p></div>'; return; }
-  el.innerHTML = `<table class="tbl">
-    <thead><tr><th>Purpose</th><th>Total</th><th>Approved</th><th>Pending</th><th>Date</th><th>Status</th></tr></thead>
-    <tbody>${data.map(m => `<tr>
-      <td>${m.purpose}</td>
-      <td>${m.total_sub || m.total_services}</td>
-      <td style="color:var(--green)">${m.approved_sub || 0}</td>
-      <td style="color:var(--orange)">${m.pending_sub || 0}</td>
-      <td>${formatDate(m.created_at)}</td>
-      <td>${badge(m.status)}</td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  const data=await apiFetch('/api/citizen/multi-application');
+  const el=document.getElementById('multi-list');
+  if (!data||!data.length) { el.innerHTML='<div class="empty"><i class="fas fa-layer-group"></i><p>No multi-applications yet.</p></div>'; return; }
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Purpose</th><th>Total</th><th>Approved</th><th>Pending</th><th>Date</th><th>Status</th></tr></thead><tbody>${data.map(m=>`<tr><td>${m.purpose}</td><td>${m.total_sub||m.total_services}</td><td style="color:var(--green)">${m.approved_sub||0}</td><td style="color:var(--orange)">${m.pending_sub||0}</td><td>${formatDate(m.created_at)}</td><td>${badge(m.status)}</td></tr>`).join('')}</tbody></table>`;
 }
-
 function openMultiModal() {
-  const grid = document.getElementById('multi-svc-grid');
-  grid.innerHTML = allServices.map(s => `
-    <label class="svc-cb">
-      <input type="checkbox" value="${s.id}"> ${s.name}
-    </label>`).join('');
+  document.getElementById('multi-svc-grid').innerHTML=allServices.map(s=>`<label class="svc-cb"><input type="checkbox" value="${s.id}"> ${s.name}</label>`).join('');
   openModal('multi-modal');
 }
-
 async function submitMultiApp() {
-  const purpose = document.getElementById('multi-purpose').value.trim();
-  const checked = [...document.querySelectorAll('#multi-svc-grid input:checked')].map(c => parseInt(c.value));
-  if (!purpose) { showToast('Please enter a purpose', 'error'); return; }
-  if (checked.length < 2) { showToast('Please select at least 2 services', 'error'); return; }
-  const data = await apiFetch('/api/citizen/multi-application', { method: 'POST', body: JSON.stringify({ purpose, service_ids: checked }) });
-  if (data && data.success) { closeModal('multi-modal'); showToast('📋 Multi-application submitted!', 'success'); loadMultiApps(); }
-  else showToast(data?.error || 'Failed', 'error');
+  const purpose=document.getElementById('multi-purpose').value.trim();
+  const checked=[...document.querySelectorAll('#multi-svc-grid input:checked')].map(c=>parseInt(c.value));
+  if (!purpose) { showToast('Please enter a purpose','error'); return; }
+  if (checked.length<2) { showToast('Select at least 2 services','error'); return; }
+  const data=await apiFetch('/api/citizen/multi-application',{method:'POST',body:JSON.stringify({purpose,service_ids:checked})});
+  if (data&&data.success) { closeModal('multi-modal'); showToast('📋 Multi-application submitted!','success'); loadMultiApps(); }
+  else showToast(data?.error||'Failed','error');
 }
 
-// ── SCHEMES ────────────────────────────────────
+// ── SCHEMES ──────────────────────────────────────
 async function loadSchemes() {
-  const el = document.getElementById('schemes-content');
-  const data = await apiFetch('/api/citizen/schemes');
-  if (!data || !data.length) { el.innerHTML = '<div class="empty"><i class="fas fa-seedling"></i><p>No schemes data available.</p></div>'; return; }
-  el.innerHTML = `
-    <div class="alert alert-info" style="margin-bottom:20px">
-      <i class="fas fa-info-circle"></i>
-      <div><strong>Check Your Eligibility:</strong> Schemes marked with ⭐ are likely applicable to rural households. Login details are used to highlight eligible schemes.</div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
-      ${data.map(s => `
-        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #e2e8f0">
-          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
-            <div style="font-size:26px">${schemeEmoji(s.category)}</div>
-            <div>
-              <h4 style="font-size:.95rem;font-weight:700">${s.name}</h4>
-              <span style="font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:20px;background:#f1f5f9;color:#64748b">${s.category}</span>
-              <div class="eligible-chip"><i class="fas fa-star"></i> Potentially Applicable</div>
-            </div>
-          </div>
-          <p style="font-size:.8rem;color:#64748b;line-height:1.6;margin-bottom:10px">${s.desc}</p>
-          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:8px 10px;font-size:.78rem;color:#166534;margin-bottom:10px">
-            <strong>Eligibility:</strong> ${s.eligibility}
-          </div>
-          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 10px;font-size:.78rem;color:#1d4ed8;margin-bottom:12px">
-            <strong>Benefit:</strong> ${s.benefit}
-          </div>
-          <a href="${s.link}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#2563eb;color:#fff;border-radius:6px;font-size:.8rem;font-weight:600;text-decoration:none">
-            <i class="fas fa-external-link-alt"></i> Visit Official Portal
-          </a>
-        </div>`).join('')}
-    </div>`;
-}
-
-function schemeEmoji(cat) {
-  const m = {Agriculture:'🌾',Employment:'⛏️',Housing:'🏠','Women & Child':'👧',Healthcare:'🏥',Energy:'🔥','Social Security':'👴','Agriculture (Credit)':'💳'};
-  return m[cat] || '📋';
-}
-
-// ── ANNOUNCEMENTS ──────────────────────────────
-async function loadAnnouncements() {
-  const el = document.getElementById('announcements-content');
-  const data = await apiFetch('/api/citizen/announcements');
-  if (!data || !data.length) { el.innerHTML = '<div class="empty"><i class="fas fa-bullhorn"></i><p>No announcements currently.</p></div>'; return; }
-  const TYPES = {health:'🏥 Health', notice:'📢 Notice', scheme:'🌱 Scheme', meeting:'👥 Meeting', general:'📌 General'};
-  const COLORS = {health:'#10b981',notice:'#f59e0b',scheme:'#8b5cf6',meeting:'#06b6d4',general:'#64748b'};
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">` +
-    data.map(a => {
-      const type = a.announcement_type || 'general';
-      const date = formatDate(a.published_on);
-      return `<div style="background:#fff;border-radius:12px;padding:20px;border-left:4px solid ${COLORS[type]||'#64748b'};box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer"
-                   onclick="openAnnModal('${encodeURIComponent(a.title)}','${encodeURIComponent(a.content)}','${type}','${date}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-          <strong style="font-size:.95rem">${a.title}</strong>
-          <span style="font-size:.75rem;color:#94a3b8;white-space:nowrap;margin-left:10px">${date}</span>
+  const el=document.getElementById('schemes-content');
+  const data=await apiFetch('/api/citizen/schemes');
+  if (!data||!data.length) {
+    el.innerHTML='<div class="alert alert-info" style="margin-bottom:16px"><i class="fas fa-info-circle"></i> No eligible schemes found. Update your occupation in <strong>My Profile</strong> to see eligible schemes.</div>';
+    return;
+  }
+  el.innerHTML=`<div class="alert alert-info" style="margin-bottom:20px"><i class="fas fa-info-circle"></i> Showing schemes eligible based on your profile. Update <strong>My Profile → Occupation</strong> for accurate results.</div><div class="scheme-grid">${data.map(s=>`
+    <div class="scheme-card">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+        <span style="font-size:24px">${s.icon||'📋'}</span>
+        <div>
+          <h4 style="font-size:.9rem;font-weight:700">${s.name}</h4>
+          <span style="font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:20px;background:#f1f5f9;color:#64748b">${s.category}</span>
         </div>
-        <span style="font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:20px;background:${COLORS[type]}22;color:${COLORS[type]}">${TYPES[type]||type}</span>
-        <p style="font-size:.82rem;color:#64748b;margin-top:8px;line-height:1.6">${a.content.substring(0,140)}${a.content.length>140?'…':''}</p>
-        <span style="font-size:.78rem;color:#2563eb;font-weight:600;margin-top:6px;display:block">Click to read more →</span>
-      </div>`;
-    }).join('') + '</div>';
+      </div>
+      <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin-bottom:9px">${s.desc}</p>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:7px 10px;font-size:.75rem;color:#166534;margin-bottom:8px"><strong>Eligibility:</strong> ${s.eligibility}</div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:7px 10px;font-size:.75rem;color:#1d4ed8;margin-bottom:10px"><strong>Benefit:</strong> ${s.benefit}</div>
+      <a href="${s.link}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:#2563eb;color:#fff;border-radius:6px;font-size:.78rem;font-weight:600;text-decoration:none"><i class="fas fa-external-link-alt"></i> Visit Official Portal</a>
+    </div>`).join('')}</div>`;
 }
 
-function openAnnModal(title, content, type, date) {
-  document.getElementById('ann-modal-title').textContent = decodeURIComponent(title);
-  const TYPES = {health:'🏥 Health', notice:'📢 Notice', scheme:'🌱 Scheme', meeting:'👥 Meeting', general:'📌 General'};
-  document.getElementById('ann-modal-body').innerHTML = `
-    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
-      <span style="font-size:.8rem;font-weight:600;padding:3px 10px;border-radius:20px;background:#eff6ff;color:#2563eb">${TYPES[type]||type}</span>
-      <span style="font-size:.78rem;color:#94a3b8"><i class="fas fa-calendar-alt"></i> ${date}</span>
-    </div>
-    <div style="font-size:.9rem;line-height:1.9;color:#334155;white-space:pre-line">${decodeURIComponent(content)}</div>`;
+// ── ANNOUNCEMENTS ────────────────────────────────
+async function loadAnnouncements() {
+  const el=document.getElementById('announcements-content');
+  const data=await apiFetch('/api/citizen/announcements');
+  if (!data||!data.length) { el.innerHTML='<div class="empty"><i class="fas fa-bullhorn"></i><p>No announcements currently.</p></div>'; return; }
+  const TYPES={health:'🏥 Health',notice:'📢 Notice',scheme:'🌱 Scheme',meeting:'👥 Meeting',general:'📌 General'};
+  const COLORS={health:'#10b981',notice:'#f59e0b',scheme:'#8b5cf6',meeting:'#06b6d4',general:'#64748b'};
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:13px">'+data.map(a=>{
+    const t=a.announcement_type||'general';
+    return `<div class="ann-card" style="border-left-color:${COLORS[t]||'#64748b'}" onclick="openAnnModal('${encodeURIComponent(a.title)}','${encodeURIComponent(a.content)}','${t}','${formatDate(a.published_on)}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+        <strong style="font-size:.9rem">${a.title}</strong>
+        <span style="font-size:.72rem;color:#94a3b8;white-space:nowrap;margin-left:8px">${formatDate(a.published_on)}</span>
+      </div>
+      <span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${COLORS[t]}22;color:${COLORS[t]}">${TYPES[t]||t}</span>
+      <p style="font-size:.8rem;color:#64748b;margin-top:7px;line-height:1.6">${a.content.substring(0,120)}${a.content.length>120?'…':''}</p>
+      <span style="font-size:.77rem;color:#2563eb;font-weight:600;margin-top:5px;display:block">Click to read more →</span>
+    </div>`;
+  }).join('')+'</div>';
+}
+function openAnnModal(title,content,type,date) {
+  document.getElementById('ann-modal-title').textContent=decodeURIComponent(title);
+  const TYPES={health:'🏥 Health',notice:'📢 Notice',scheme:'🌱 Scheme',meeting:'👥 Meeting',general:'📌 General'};
+  document.getElementById('ann-modal-body').innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center"><span style="font-size:.78rem;font-weight:600;padding:3px 9px;border-radius:20px;background:#eff6ff;color:#2563eb">${TYPES[type]||type}</span><span style="font-size:.76rem;color:#94a3b8"><i class="fas fa-calendar-alt"></i> ${date}</span></div><div style="font-size:.88rem;line-height:1.9;color:#334155;white-space:pre-line">${decodeURIComponent(content)}</div>`;
   openModal('ann-modal');
 }
 
-// ── TIMELINE ───────────────────────────────────
+// ── TIMELINE ─────────────────────────────────────
 async function loadTimeline() {
-  const events = await apiFetch('/api/citizen/timeline');
-  const el = document.getElementById('timeline-list');
-  if (!events || !events.length) { el.innerHTML = '<div class="empty"><i class="fas fa-history"></i><p>No activity yet.</p></div>'; return; }
-  el.innerHTML = '<div class="timeline">' + events.map(e => `
-    <div class="tl-item ${e.event_type}">
-      <div class="tl-content">
-        <h4>${e.event_title}</h4>
-        <p>${e.event_description}</p>
-        <div class="tl-time"><i class="fas fa-clock"></i> ${formatDate(e.created_at)}</div>
-      </div>
-    </div>`).join('') + '</div>';
+  const events=await apiFetch('/api/citizen/timeline');
+  const el=document.getElementById('timeline-list');
+  if (!events||!events.length) { el.innerHTML='<div class="empty"><i class="fas fa-history"></i><p>No activity yet.</p></div>'; return; }
+  el.innerHTML='<div class="timeline">'+events.map(e=>`<div class="tl-item ${e.event_type}"><div class="tl-content"><h4>${e.event_title}</h4><p>${e.event_description}</p><div class="tl-time"><i class="fas fa-clock"></i> ${formatDate(e.created_at)}</div></div></div>`).join('')+'</div>';
 }
 
-// ── SUBMIT APPLICATION ─────────────────────────
-function openNewAppModal() { openModal('new-app-modal'); }
-
-async function submitApplication() {
-  const serviceId = document.getElementById('app-service-id').value;
-  const purpose = document.getElementById('app-purpose').value.trim();
-  if (!serviceId || !purpose) { showToast('Please fill in all required fields', 'error'); return; }
-
-  // Validate required docs
-  const reqFiles = document.querySelectorAll('.doc-upload[data-required="true"]');
-  for (let f of reqFiles) {
-    if (!f.files || !f.files.length) {
-      showToast(`Please upload: ${f.closest('.doc-file-group').querySelector('.doc-file-label').textContent.trim()}`, 'error');
-      return;
-    }
-  }
-
-  const formData = new FormData();
-  formData.append('service_id', serviceId);
-  formData.append('purpose', purpose);
-  formData.append('details', document.getElementById('app-details').value);
-
-  // Dynamic doc uploads
-  document.querySelectorAll('.doc-upload').forEach(f => {
-    if (f.files && f.files.length) formData.append('documents', f.files[0]);
-  });
-  // Other docs
-  const otherFiles = document.getElementById('app-docs').files;
-  for (let f of otherFiles) formData.append('documents', f);
-
-  const res = await fetch('/api/citizen/applications', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-  const data = await res.json();
-  if (data.success) {
-    closeModal('new-app-modal');
-    showToast('✅ Application submitted! ID: #' + data.application_id, 'success');
-    loadHomeStats();
-    loadNotifications();
-  } else showToast(data.error || 'Failed to submit', 'error');
+// ── PROFILE ──────────────────────────────────────
+async function loadProfile() {
+  const data=await apiFetch('/api/citizen/profile');
+  if (!data) return;
+  document.getElementById('p-name').value=data.full_name||'';
+  document.getElementById('p-phone').value=data.phone||'';
+  document.getElementById('p-email').value=data.email||'';
+  document.getElementById('p-gender').value=data.gender||'';
+  document.getElementById('p-dob').value=data.date_of_birth||'';
+  document.getElementById('p-occupation').value=data.occupation||'';
+  document.getElementById('p-address').value=data.address||'';
+  document.getElementById('p-village').value=data.village||'';
+  document.getElementById('p-block').value=data.block||'';
+  document.getElementById('p-district').value=data.district||'';
+  document.getElementById('p-state').value=data.state||'';
+  document.getElementById('p-pincode').value=data.pincode||'';
 }
-
-// ── TOAST ──────────────────────────────────────
-function showToast(msg, type = 'info') {
-  const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:999;padding:14px 20px;border-radius:10px;font-size:.85rem;font-weight:600;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:fadeIn .3s;${type==='success'?'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0':type==='error'?'background:#fee2e2;color:#991b1b;border:1px solid #fecaca':'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe'}`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 4000);
-}
-
-// ── HELPERS ───────────────────────────────────
-function formatDate(d) {
-  if (!d) return '–';
-  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function badge(status) {
-  const m = {
-    pending: ['b-pending', 'Pending'],
-    approved: ['b-approved', 'Approved'],
-    rejected: ['b-rejected', 'Rejected'],
-    correction_required: ['b-correction', '✏️ Correction Needed'],
-    resubmitted: ['b-resubmitted', 'Resubmitted'],
-    expired: ['b-expired', 'Expired'],
+async function saveProfile() {
+  const payload={
+    full_name:document.getElementById('p-name').value,
+    phone:document.getElementById('p-phone').value,
+    address:document.getElementById('p-address').value,
+    village:document.getElementById('p-village').value,
+    block:document.getElementById('p-block').value,
+    district:document.getElementById('p-district').value,
+    state:document.getElementById('p-state').value,
+    pincode:document.getElementById('p-pincode').value,
+    date_of_birth:document.getElementById('p-dob').value,
+    gender:document.getElementById('p-gender').value,
+    occupation:document.getElementById('p-occupation').value,
   };
-  const [cls, lbl] = m[status] || ['b-pending', status];
+  const data=await apiFetch('/api/citizen/profile',{method:'PATCH',body:JSON.stringify(payload)});
+  if (data&&data.success) { showToast('✅ Profile updated!','success'); document.getElementById('citizen-name').textContent=payload.full_name; document.getElementById('citizen-name2').textContent=payload.full_name; }
+  else showToast(data?.error||'Failed to update profile','error');
+}
+
+// ── SUBMIT APPLICATION ────────────────────────────
+function openNewAppModal() { openModal('new-app-modal'); }
+async function submitApplication() {
+  const serviceId=document.getElementById('app-service-id').value;
+  const purpose=document.getElementById('app-purpose').value.trim();
+  if (!serviceId||!purpose) { showToast('Please fill in all required fields','error'); return; }
+  const reqFiles=document.querySelectorAll('.doc-upload[data-required="true"]');
+  for (let f of reqFiles) { if (!f.files||!f.files.length) { showToast(`Please upload: ${f.previousElementSibling.textContent.trim()}`,'error'); return; } }
+  const formData=new FormData();
+  formData.append('service_id',serviceId); formData.append('purpose',purpose);
+  formData.append('details',document.getElementById('app-details').value);
+  document.querySelectorAll('.doc-upload').forEach(f=>{ if (f.files&&f.files.length) formData.append('documents',f.files[0]); });
+  const otherFiles=document.getElementById('app-docs').files;
+  for (let f of otherFiles) formData.append('documents',f);
+  const res=await fetch('/api/citizen/applications',{method:'POST',headers:{'Authorization':'Bearer '+token},body:formData});
+  const data=await res.json();
+  if (data.success) { closeModal('new-app-modal'); showToast('✅ Application submitted! ID: APP'+data.application_id,'success'); loadHomeStats(); loadNotifications(); }
+  else showToast(data.error||'Failed to submit','error');
+}
+
+// ── HELPERS ───────────────────────────────────────
+function showToast(msg,type='info') {
+  const t=document.createElement('div');
+  const colors={success:'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0',error:'background:#fee2e2;color:#991b1b;border:1px solid #fecaca',info:'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe'};
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;z-index:999;padding:12px 18px;border-radius:10px;font-size:.83rem;font-weight:600;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.15);${colors[type]||colors.info}`;
+  t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),4000);
+}
+function formatDate(d) { if (!d) return '–'; return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function badge(status) {
+  const m={pending:['b-pending','Pending'],approved:['b-approved','Approved'],rejected:['b-rejected','Rejected'],correction_required:['b-correction','✏️ Correction Needed'],resubmitted:['b-resubmitted','Resubmitted'],expired:['b-expired','Expired']};
+  const [cls,lbl]=m[status]||['b-pending',status];
   return `<span class="badge ${cls}">${lbl}</span>`;
 }
 </script>

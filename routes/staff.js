@@ -17,6 +17,7 @@ function createNotification(db, userId, title, message, appId) {
 
 router.get('/applications/pending', (req, res) => {
   const db = req.app.locals.db;
+  // Only show applications assigned to this staff member
   db.all(
     `SELECT a.application_id AS id, a.status, a.created_at, a.application_data,
             s.service_name, u.full_name AS citizen_name, u.phone, u.email,
@@ -27,9 +28,9 @@ router.get('/applications/pending', (req, res) => {
      FROM applications a
      JOIN services s ON a.service_id = s.service_id
      JOIN users u ON a.user_id = u.user_id
-     WHERE a.status = 'pending'
+     WHERE a.status IN ('pending','verified') AND a.assigned_to = ?
      ORDER BY waiting_days DESC, a.created_at ASC`,
-    [], (err, rows) => {
+    [req.userId], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows || []);
     });
@@ -69,6 +70,18 @@ router.get('/applications/:id', (req, res) => {
       if (!row) return res.status(404).json({ error: 'Not found' });
       try { const d = JSON.parse(row.application_data||'{}'); row.purpose = d.purpose||''; row.details = d.details||''; row.uploaded_docs = d.documents||[]; } catch(e) {}
       res.json(row);
+    });
+});
+
+// Mark application as verified (intermediate step before approval)
+router.post('/applications/:id/verify', (req, res) => {
+  const db = req.app.locals.db;
+  db.run(
+    `UPDATE applications SET status='verified', updated_at=datetime('now') WHERE application_id=? AND assigned_to=?`,
+    [req.params.id, req.userId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
     });
 });
 
@@ -223,6 +236,115 @@ router.get('/workload', (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(row || {});
     });
+});
+
+// All applications (for "All Applications" tab) — all staff can see all
+router.get('/applications/all', (req, res) => {
+  const db = req.app.locals.db;
+  const { search, staff_id } = req.query;
+  let query = `SELECT a.application_id AS id, a.status, a.created_at, a.application_data,
+                      s.service_name, u.full_name AS citizen_name,
+                      st.full_name AS assigned_to_name, a.assigned_to AS assigned_staff_id
+               FROM applications a
+               JOIN services s ON a.service_id = s.service_id
+               JOIN users u ON a.user_id = u.user_id
+               LEFT JOIN staff st ON a.assigned_to = st.staff_id`;
+  const params = [];
+  const conditions = [];
+  if (search) {
+    conditions.push(`(u.full_name LIKE ? OR CAST(a.application_id AS TEXT) LIKE ? OR st.full_name LIKE ?)`);
+    params.push('%'+search+'%', '%'+search+'%', '%'+search+'%');
+  }
+  if (staff_id) {
+    conditions.push(`a.assigned_to = ?`);
+    params.push(staff_id);
+  }
+  if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+  query += ' ORDER BY a.created_at DESC LIMIT 200';
+  db.all(query, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows || []);
+  });
+});
+
+// Staff list (for search filter in all-applications)
+router.get('/staff-list', (req, res) => {
+  const db = req.app.locals.db;
+  db.all(`SELECT staff_id AS id, full_name AS name FROM staff WHERE is_active=1 ORDER BY full_name`,
+    [], (err, rows) => { res.json(rows || []); });
+});
+
+// QR Verify certificate (staff-only)
+router.get('/verify-certificate', (req, res) => {
+  const db = req.app.locals.db;
+  const { app_id, h } = req.query;
+  if (!app_id) return res.status(400).json({ valid: false, message: 'Missing app_id' });
+
+  const numericId = String(app_id).replace(/^APP/i, '');
+  db.get(
+    `SELECT c.certificate_id AS id, c.issue_date AS issued_at, c.expiry_date,
+            c.verification_hash, c.is_valid, c.certificate_number,
+            c.application_id AS app_id,
+            s.service_name, u.full_name AS citizen_name, u.aadhar_number
+     FROM certificates c
+     JOIN applications a ON c.application_id = a.application_id
+     JOIN services s ON c.service_id = s.service_id
+     JOIN users u ON c.user_id = u.user_id
+     WHERE a.application_id = ?`,
+    [numericId],
+    (err, cert) => {
+      if (err) return res.status(500).json({ valid: false, message: 'DB error' });
+      if (!cert) return res.status(404).json({ valid: false, message: 'No certificate found for Application ID: APP' + numericId });
+
+      const crypto = require('crypto');
+      const issueDateRaw = new Date(cert.issued_at).toISOString().split('T')[0];
+      const expectedHash = crypto.createHash('sha256')
+        .update(`${cert.app_id}|${cert.citizen_name}|${cert.service_name}|${issueDateRaw}`)
+        .digest('hex');
+
+      const hashMatch = !h || h === expectedHash || h === cert.verification_hash;
+      if (h && !hashMatch) {
+        return res.json({ valid: false, tampered: true, message: 'Invalid Certificate — Possible Tampering Detected' });
+      }
+
+      const isExpired = cert.expiry_date && new Date(cert.expiry_date) < new Date();
+      const isValid = cert.is_valid === 1;
+      res.json({
+        valid: isValid && !isExpired,
+        certificate: { ...cert, status: isExpired ? 'expired' : (isValid ? 'active' : 'invalid') },
+        message: isExpired ? 'Certificate Expired' : (isValid ? 'Certificate is Valid and Authentic ✅' : 'Certificate is not active')
+      });
+    }
+  );
+});
+
+// Staff: get uploaded documents list for an application
+router.get('/applications/:id/documents', (req, res) => {
+  const db = req.app.locals.db;
+  db.get(
+    `SELECT a.application_id AS id, a.application_data, s.service_name, u.full_name AS citizen_name
+     FROM applications a
+     JOIN services s ON a.service_id = s.service_id
+     JOIN users u ON a.user_id = u.user_id
+     WHERE a.application_id = ?`,
+    [req.params.id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: 'Not found' });
+      let docs = [];
+      try {
+        const d = JSON.parse(row.application_data || '{}');
+        docs = (d.documents || []).map((filename, idx) => ({
+          index: idx + 1,
+          filename,
+          url: `/uploads/${filename}`,
+          label: `Document ${idx + 1}`,
+          type: filename.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : 'pdf'
+        }));
+      } catch(e) {}
+      res.json({ application_id: row.id, citizen_name: row.citizen_name, service_name: row.service_name, documents: docs });
+    }
+  );
 });
 
 module.exports = router;
