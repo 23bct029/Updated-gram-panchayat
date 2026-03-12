@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Digital Gram Panchayat Services Portal</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="logo">
+                    <img src="/images/logo.svg" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏛️%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="header-title">
+                    <h1>Digital Gram Panchayat</h1>
+                    <p>Staff Portal</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-profile" onclick="logout()">
+                    <div class="user-avatar" id="userAvatar">ST</div>
+                    <div class="user-info">
+                        <p id="userName">Staff Member</p>
+                    </div>
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" onclick="showSection('dashboard', this)"><i class="fas fa-th-large"></i><span>Dashboard</span></a></li>
+                <li><a href="#" onclick="showSection('applications', this)"><i class="fas fa-tasks"></i><span>Applications</span></a></li>
+                <li><a href="#" onclick="showSection('verify', this)"><i class="fas fa-check-circle"></i><span>Verify</span></a></li>
+                <li><a href="#" onclick="showSection('approve', this)"><i class="fas fa-stamp"></i><span>Approve</span></a></li>
+                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="content-section">
+                <div class="welcome-section">
+                    <h2>Staff Dashboard</h2>
+                    <p>Application statistics and reports</p>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <span style="font-weight: 600; color: var(--gray-700);">Report Period:</span>
+                        <button onclick="loadReportPeriod(7)" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; background: #2563a8;">7 Days</button>
+                        <button onclick="loadReportPeriod(15)" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; background: #2563a8;">15 Days</button>
+                        <button onclick="loadReportPeriod(30)" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; background: #2563a8;">1 Month</button>
+                        <button onclick="loadReportPeriod(0)" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; background: #2563a8;">All Time</button>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="action-cards">
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-calendar-day"></i></div>
+                        <h3 id="todayCount">0</h3>
+                        <p>Today</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+                        <h3 id="yesterdayCount">0</h3>
+                        <p>Yesterday</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-calendar-week"></i></div>
+                        <h3 id="weekCount">0</h3>
+                        <p>Last 7 Days</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-calendar"></i></div>
+                        <h3 id="monthCount">0</h3>
+                        <p>Last Month</p>
+                    </div>
+                </div>
+
+                <!-- Application Status Summary -->
+                <div class="applications-section">
+                    <div class="section-header">
+                        <h3>Application Status Summary</h3>
+                    </div>
+                    <div class="action-cards">
+                        <div class="action-card" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+                            <div class="icon"><i class="fas fa-hourglass-start" style="color: #f59e0b;"></i></div>
+                            <h3 id="statusPendingCount" style="color: #f59e0b;">0</h3>
+                            <p>Pending Applications</p>
+                        </div>
+                        <div class="action-card" style="background: #dbeafe; border-left: 4px solid #3b82f6;">
+                            <div class="icon"><i class="fas fa-eye" style="color: #3b82f6;"></i></div>
+                            <h3 id="statusVerifyCount" style="color: #3b82f6;">0</h3>
+                            <p>Ready to Verify</p>
+                        </div>
+                        <div class="action-card" style="background: #e0e7ff; border-left: 4px solid #6366f1;">
+                            <div class="icon"><i class="fas fa-check-double" style="color: #6366f1;"></i></div>
+                            <h3 id="statusVerifiedCount" style="color: #6366f1;">0</h3>
+                            <p>Ready to Approve</p>
+                        </div>
+                        <div class="action-card" style="background: #dcfce7; border-left: 4px solid #10b981;">
+                            <div class="icon"><i class="fas fa-certificate" style="color: #10b981;"></i></div>
+                            <h3 id="statusApprovedCount" style="color: #10b981;">0</h3>
+                            <p>Approved</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applications Section -->
+            <div id="applicationsSection" class="content-section" style="display: none;">
+                <div class="welcome-section">
+                    <h2>Applications</h2>
+                    <p>Manage and process pending applications</p>
+                </div>
+
+                <!-- Stats Header -->
+                <div class="action-cards">
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-inbox"></i></div>
+                        <h3 id="appOpenCount">0</h3>
+                        <p>Open Applications</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-hourglass-start"></i></div>
+                        <h3 id="appPendingCount">0</h3>
+                        <p>Pending</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-clock"></i></div>
+                        <h3 id="appTodayCount">0</h3>
+                        <p>Submitted Today</p>
+                    </div>
+                </div>
+
+                <!-- Applications Table -->
+                <div class="applications-section">
+                    <div class="section-header">
+                        <h3>All Applications</h3>
+                    </div>
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Application ID</th>
+                                <th>Citizen Name</th>
+                                <th>Service Type</th>
+                                <th>Submitted On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Verify Section -->
+            <div id="verifySection" class="content-section" style="display: none;">
+                <div class="welcome-section">
+                    <h2>Verify Applications</h2>
+                    <p>Review and verify documents</p>
+                </div>
+
+                <!-- Stats Header -->
+                <div class="action-cards">
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-inbox"></i></div>
+                        <h3 id="verifyToDoCount">0</h3>
+                        <p>To Verify</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-check-circle"></i></div>
+                        <h3 id="verifyDoneCount">0</h3>
+                        <p>Verified</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-chart-pie"></i></div>
+                        <h3 id="verifyPercent">0%</h3>
+                        <p>Completion</p>
+                    </div>
+                </div>
+
+                <!-- Verify Table -->
+                <div class="applications-section">
+                    <div class="section-header">
+                        <h3>Applications Pending Verification</h3>
+                    </div>
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Application ID</th>
+                                <th>Citizen Name</th>
+                                <th>Service Type</th>
+                                <th>Submitted On</th>
+                                <th>Documents</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verifyTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Approve Section -->
+            <div id="approveSection" class="content-section" style="display: none;">
+                <div class="welcome-section">
+                    <h2>Approve Applications</h2>
+                    <p>Issue certificates and approve applications</p>
+                </div>
+
+                <!-- Stats Header -->
+                <div class="action-cards">
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-inbox"></i></div>
+                        <h3 id="approveToDoCount">0</h3>
+                        <p>To Approve</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-certificate"></i></div>
+                        <h3 id="approveDoneCount">0</h3>
+                        <p>Approved</p>
+                    </div>
+                    <div class="action-card">
+                        <div class="icon"><i class="fas fa-chart-pie"></i></div>
+                        <h3 id="approvePercent">0%</h3>
+                        <p>Completion</p>
+                    </div>
+                </div>
+
+                <!-- Approve Table -->
+                <div class="applications-section">
+                    <div class="section-header">
+                        <h3>Applications Ready to Approve</h3>
+                    </div>
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Application ID</th>
+                                <th>Citizen Name</th>
+                                <th>Service Type</th>
+                                <th>Submitted On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approveTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+                        <tbody id="applicationsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                                    <p style="margin-top: 10px;">Loading applications...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Applications Section -->
+            <div id="applicationsSection" class="content-section" style="display: none;">
+                <div class="welcome-section">
+                    <h2>Applications Management</h2>
+                    <p>Process and manage all citizen applications</p>
+                </div>
+
+                <div class="applications-section">
+                    <div class="section-header">
+                        <h3>All Applications</h3>
+                        <div>
+                            <select id="statusFilterAll" onchange="filterApplications()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--gray-300);">
+                                <option value="">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Verification">Verification</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Application ID</th>
+                                <th>Citizen Name</th>
+                                <th>Service Type</th>
+                                <th>Submitted On</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allApplicationsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                                    <p style="margin-top: 10px;">Loading applications...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Verification Section -->
+            <div id="verifySection" class="content-section" style="display: none;">
+                <div class="welcome-section">
+                    <h2>Document Verification</h2>
+                    <p>Review and verify citizen documents and applications</p>
+                </div>
+
+                <div class="applications-section">
+                    <div class="section-header">
+                        <h3>Applications Pending Verification</h3>
+                        <div>
+                            <select id="verifyStatusFilter" onchange="filterVerifications()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--gray-300);">
+                                <option value="">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Verification">Verification</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Application ID</th>
+                                <th>Citizen Name</th>
+                                <th>Service Type</th>
+                                <th>Documents</th>
+                                <th>Submitted On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verifyApplicationsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                                    <p style="margin-top: 10px;">Loading verification applications...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Application Details</h3>
+                <span class="close-modal" onclick="closeModal('detailsModal')">&times;</span>
+            </div>
+            <div id="detailsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Use relative URL for API calls (works in both dev and production)
+        const API_URL = window.location.origin + '/api';
+        let authToken = localStorage.getItem('authToken');
+        let allApplications = [];
+        let currentApplicationDetails = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadDashboard();
+        });
+
+        function checkAuth() {
+            if (!authToken || localStorage.getItem('userType') !== 'staff') {
+                window.location.href = '/login';
+            }
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            if (userData.name) {
+                document.getElementById('userName').textContent = userData.name;
+                const initials = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+            }
+        }
+
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    console.warn(`Attempt ${i + 1} failed (${response.status}), retrying...`);
+                } catch (e) {
+                    console.warn(`Attempt ${i + 1} network error, retrying...`);
+                }
+                await new Promise(r => setTimeout(r, (i + 1) * 5000));
+            }
+            return null;
+        }
+
+        async function loadDashboard() {
+            try {
+                // Fetch applications and statistics
+                const [dashResponse, statsResponse] = await Promise.all([
+                    fetchWithRetry(`${API_URL}/staff/applications`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    }),
+                    fetchWithRetry(`${API_URL}/staff/statistics`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    })
+                ]);
+                
+                if (dashResponse && statsResponse) {
+                    const dashData = await dashResponse.json();
+                    const statsData = await statsResponse.json();
+                    
+                    if (dashData.success && statsData.success) {
+                        allApplications = dashData.applications || [];
+                        
+                        // Display recent applications on dashboard
+                        const recentAppsTableBody = document.getElementById('applicationsTableBody');
+                        if (recentAppsTableBody) {
+                            displayApplications(allApplications.slice(0, 10), recentAppsTableBody);
+                        }
+                        
+                        // Populate all applications in Applications section
+                        const allAppsTbody = document.getElementById('allApplicationsTableBody');
+                        if (allAppsTbody) displayApplications(allApplications, allAppsTbody);
+                        
+                        // Filter and display verification pending applications
+                        const verifyTbody = document.getElementById('verifyApplicationsTableBody');
+                        if (verifyTbody) {
+                            const verifyApps = allApplications.filter(a => 
+                                a.status === 'Verification' || a.status === 'Under Review'
+                            );
+                            displayApplications(verifyApps, verifyTbody);
+                        }
+                        
+                        // Update statistics
+                        updateStats(statsData.statistics || {});
+                    }
+                } else {
+                    displaySampleApplications();
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                displaySampleApplications();
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('pendingCount').textContent = stats.pending || 0;
+            document.getElementById('approvedCount').textContent = stats.approved || 0;
+            document.getElementById('verificationCount').textContent = stats.verification || 0;
+            document.getElementById('totalCount').textContent = stats.total || 0;
+        }
+
+        function displayApplications(applications, tableBody = null) {
+            const tbody = tableBody || document.getElementById('applicationsTableBody');
+            if (!tbody) return;
+            
+            if (!applications || applications.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: var(--gray-500);">No applications found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = applications.map(app => `
+                <tr>
+                    <td>${app.application_id || 'N/A'}</td>
+                    <td>${app.citizen_name || 'N/A'}</td>
+                    <td>${app.service_name || 'N/A'}</td>
+                    <td>${app.created_at ? new Date(app.created_at).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td><span class="status-badge status-${(app.status || '').toLowerCase().replace(' ', '-')}">${app.status || 'Pending'}</span></td>
+                    <td><button onclick="viewDetails('${app.application_id}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">View</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function displaySampleApplications() {
+            const sampleData = [
+                { application_id: 'APP001', citizen_name: 'Rajesh Kumar', service_name: 'Income Certificate', created_at: new Date().toISOString(), status: 'Pending' },
+                { application_id: 'APP002', citizen_name: 'Priya Singh', service_name: 'Caste Certificate', created_at: new Date(Date.now() - 86400000).toISOString(), status: 'Under Review' },
+                { application_id: 'APP003', citizen_name: 'Amit Patel', service_name: 'Residence Certificate', created_at: new Date(Date.now() - 172800000).toISOString(), status: 'Verification' }
+            ];
+            allApplications = sampleData;
+            displayApplications(sampleData);
+        }
+
+        async function viewDetails(appId) {
+            try {
+                const response = await fetchWithRetry(`${API_URL}/staff/application/${appId}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response && response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentApplicationDetails = data.application;
+                        displayApplicationDetails(data.application);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching details:', error);
+            }
+
+            // Fallback to local data
+            const app = allApplications.find(a => a.application_id === appId);
+            if (app) {
+                currentApplicationDetails = app;
+                displayApplicationDetails(app);
+            }
+        }
+
+        function displayApplicationDetails(app) {
+            const statusSteps = getStatusSteps(app.status);
+            let actionButtons = '';
+            
+            if (app.status === 'Pending') {
+                actionButtons = `<button onclick="moveToVerification('${app.application_id}')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">✓ Confirm & Move to Verification</button>`;
+            } else if (app.status === 'Verification' || app.status === 'Under Review') {
+                actionButtons = `<button onclick="markVerified('${app.application_id}')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">✓ Mark as Verified</button>
+                    <button onclick="closeModal('detailsModal')" class="btn btn-primary" style="width: 100%; margin-top: 10px; background-color: var(--gray-500);">Cancel</button>`;
+            } else if (app.status === 'Verified') {
+                actionButtons = `<button onclick="approveApplication('${app.application_id}')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">✓ Approve & Issue Certificate</button>
+                    <button onclick="closeModal('detailsModal')" class="btn btn-primary" style="width: 100%; margin-top: 10px; background-color: var(--gray-500);">Cancel</button>`;
+            } else if (app.status === 'Approved') {
+                actionButtons = `<button onclick="closeModal('detailsModal')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">✓ Certificate Issued</button>`;
+            }
+
+            const detailsContent = `
+                <div style="padding: 20px;">
+                    <h4>Workflow Status Progress</h4>
+                    <div style="display: flex; justify-content: space-around; margin: 20px 0; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${statusSteps[0] ? '#10b981' : '#d1d5db'}; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-weight: bold;">1</div>
+                            <small style="display: block; margin-top: 5px;">Application</small>
+                        </div>
+                        <div style="flex: 1; height: 2px; background: ${statusSteps[1] ? '#10b981' : '#d1d5db'}; margin: 0 10px; margin-top: 20px;"></div>
+                        <div style="text-align: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${statusSteps[1] ? '#10b981' : '#d1d5db'}; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-weight: bold;">2</div>
+                            <small style="display: block; margin-top: 5px;">Verification</small>
+                        </div>
+                        <div style="flex: 1; height: 2px; background: ${statusSteps[2] ? '#10b981' : '#d1d5db'}; margin: 0 10px; margin-top: 20px;"></div>
+                        <div style="text-align: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${statusSteps[2] ? '#10b981' : '#d1d5db'}; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-weight: bold;">3</div>
+                            <small style="display: block; margin-top: 5px;">Certificate</small>
+                        </div>
+                    </div>
+
+    </div>
+
+    <!-- Application Details Modal -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Application Details</h3>
+                <span class="close-modal" onclick="closeModal('detailsModal')">&times;</span>
+            </div>
+            <div id="detailsContent" style="padding: 20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin + '/api';
+        let authToken = localStorage.getItem('authToken');
+        let allApplications = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadDashboard();
+        });
+
+        function checkAuth() {
+            if (!authToken || localStorage.getItem('userType') !== 'staff') {
+                window.location.href = '/login';
+            }
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            if (userData.name) {
+                document.getElementById('userName').textContent = userData.name;
+                const initials = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                document.getElementById('userAvatar').textContent = initials;
+            }
+        }
+
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                } catch (e) {
+                    console.warn(`Attempt ${i + 1} failed`);
+                }
+                await new Promise(r => setTimeout(r, (i + 1) * 2000));
+            }
+            return null;
+        }
+
+        async function loadDashboard() {
+            try {
+                const [dashResponse, statsResponse] = await Promise.all([
+                    fetchWithRetry(`${API_URL}/staff/applications`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    }),
+                    fetchWithRetry(`${API_URL}/staff/statistics`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    })
+                ]);
+
+                if (dashResponse && statsResponse) {
+                    const dashData = await dashResponse.json();
+                    const statsData = await statsResponse.json();
+                    
+                    if (dashData.success && statsData.success) {
+                        allApplications = dashData.applications || [];
+                        updateDashboard(statsData.statistics || {});
+                        populateAllSections(allApplications);
+                    }
+                } else {
+                    loadSampleData();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                loadSampleData();
+            }
+        }
+
+        function updateDashboard(stats) {
+            const allApps = allApplications;
+            const today = new Date().toDateString();
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            const sevenDaysAgo = new Date(Date.now() - 7*86400000);
+            const thirtyDaysAgo = new Date(Date.now() - 30*86400000);
+
+            const todayApps = allApps.filter(a => new Date(a.created_at || '').toDateString() === today).length;
+            const yesterdayApps = allApps.filter(a => new Date(a.created_at || '').toDateString() === yesterday).length;
+            const weekApps = allApps.filter(a => new Date(a.created_at || '') >= sevenDaysAgo).length;
+            const monthApps = allApps.filter(a => new Date(a.created_at || '') >= thirtyDaysAgo).length;
+
+            const pending = allApps.filter(a => a.status === 'Pending').length;
+            const verify = allApps.filter(a => a.status === 'Verification' || a.status === 'Under Review').length;
+            const verified = allApps.filter(a => a.status === 'Verified').length;
+            const approved = allApps.filter(a => a.status === 'Approved').length;
+
+            try {
+                document.getElementById('todayCount').textContent = todayApps;
+                document.getElementById('yesterdayCount').textContent = yesterdayApps;
+                document.getElementById('weekCount').textContent = weekApps;
+                document.getElementById('monthCount').textContent = monthApps;
+
+                document.getElementById('statusPendingCount').textContent = pending;
+                document.getElementById('statusVerifyCount').textContent = verify;
+                document.getElementById('statusVerifiedCount').textContent = verified;
+                document.getElementById('statusApprovedCount').textContent = approved;
+
+                // Applications section stats
+                document.getElementById('appOpenCount').textContent = allApps.filter(a => a.status === 'Pending' || a.status === 'Verification').length;
+                document.getElementById('appPendingCount').textContent = pending;
+                document.getElementById('appTodayCount').textContent = todayApps;
+
+                // Verify section stats
+                document.getElementById('verifyToDoCount').textContent = verify;
+                document.getElementById('verifyDoneCount').textContent = verified;
+                const verifyPercent = verify > 0 ? Math.round((verified / (verified + verify)) * 100) : 0;
+                document.getElementById('verifyPercent').textContent = verifyPercent + '%';
+
+                // Approve section stats
+                document.getElementById('approveToDoCount').textContent = verified;
+                document.getElementById('approveDoneCount').textContent = approved;
+                const approvePercent = verified > 0 ? Math.round((approved / (approved + verified)) * 100) : 0;
+                document.getElementById('approvePercent').textContent = approvePercent + '%';
+            } catch (e) {
+                console.error('Error updating dashboard:', e);
+            }
+        }
+
+        function populateAllSections(apps) {
+            // Applications Section
+            const appTbody = document.getElementById('applicationsTableBody');
+            if (appTbody) {
+                displayTable(apps.filter(a => a.status === 'Pending'), appTbody);
+            }
+
+            // Verify Section
+            const verifyTbody = document.getElementById('verifyTableBody');
+            if (verifyTbody) {
+                displayTable(apps.filter(a => a.status === 'Verification' || a.status === 'Under Review'), verifyTbody);
+            }
+
+            // Approve Section
+            const approveTbody = document.getElementById('approveTableBody');
+            if (approveTbody) {
+                displayTable(apps.filter(a => a.status === 'Verified'), approveTbody);
+            }
+        }
+
+        function displayTable(apps, tbody) {
+            if (!apps || apps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: var(--gray-500);">No applications</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = apps.map(app => `
+                <tr>
+                    <td>${app.application_id}</td>
+                    <td>${app.citizen_name || 'N/A'}</td>
+                    <td>${app.service_name || 'N/A'}</td>
+                    <td>${new Date(app.created_at).toLocaleDateString('en-IN')}</td>
+                    <td><span class="status-badge status-${(app.status || '').toLowerCase().replace(' ', '-')}">${app.status}</span></td>
+                    <td><button onclick="viewApp('${app.application_id}')" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">View</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function viewApp(appId) {
+            const app = allApplications.find(a => a.application_id === appId);
+            if (!app) return;
+
+            let actionBtn = '';
+            if (app.status === 'Pending') {
+                actionBtn = `<button onclick="changeStatus('${appId}', 'Verification')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">→ Move to Verify</button>`;
+            } else if (app.status === 'Verification' || app.status === 'Under Review') {
+                actionBtn = `<button onclick="changeStatus('${appId}', 'Verified')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">✓ Mark Verified</button>`;
+            } else if (app.status === 'Verified') {
+                actionBtn = `<button onclick="approveApp('${appId}')" class="btn btn-primary" style="width: 100%; margin-top: 15px;">✓ Approve</button>`;
+            }
+
+            const modal = document.getElementById('detailsModal');
+            modal.querySelector('#detailsContent').innerHTML = `
+                <p><strong>ID:</strong> ${app.application_id}</p>
+                <p><strong>Citizen:</strong> ${app.citizen_name || 'N/A'}</p>
+                <p><strong>Service:</strong> ${app.service_name || 'N/A'}</p>
+                <p><strong>Date:</strong> ${new Date(app.created_at).toLocaleDateString('en-IN')}</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${(app.status || '').toLowerCase().replace(' ', '-')}">${app.status}</span></p>
+                ${actionBtn}
+            `;
+            modal.style.display = 'block';
+        }
+
+        async function changeStatus(appId, newStatus) {
+            try {
+                const response = await fetch(`${API_URL}/staff/application/${appId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    alert('Status updated!');
+                    closeModal('detailsModal');
+                    loadDashboard();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function approveApp(appId) {
+            try {
+                const response = await fetch(`${API_URL}/staff/application/${appId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✓ Certificate issued!');
+                    closeModal('detailsModal');
+                    loadDashboard();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function loadReportPeriod(days) {
+            loadDashboard();
+        }
+
+        function loadSampleData() {
+            allApplications = [
+                { application_id: 'APP001', citizen_name: 'Rajesh Kumar', service_name: 'Income', created_at: new Date().toISOString(), status: 'Pending' },
+                { application_id: 'APP002', citizen_name: 'Priya Singh', service_name: 'Caste', created_at: new Date(Date.now() - 86400000).toISOString(), status: 'Verification' }
+            ];
+            updateDashboard({});
+            populateAllSections(allApplications);
+        }
+
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+            const section = document.getElementById(sectionId + 'Section');
+            if (section) section.style.display = 'block';
+
+            document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            loadDashboard();
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

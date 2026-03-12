@@ -8,7 +8,7 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const SQLiteDatabase = require('./database/sqlite-wrapper');
-console.log("RUNNING UPDATED VERSION");
+
 dotenv.config();
 
 if (!process.env.JWT_SECRET) {
@@ -54,7 +54,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Uploads: use /tmp on Render (writable persistent-ish), local otherwise
+const uploadsDir = process.env.RENDER
+    ? path.join('/tmp', 'uploads')
+    : path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+app.locals.uploadsDir = uploadsDir;
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -124,6 +131,7 @@ const migrateDatabase = (db) => {
                 created_at DATETIME DEFAULT (datetime('now'))
             )`,
             `ALTER TABLE users ADD COLUMN gender TEXT`,
+            `ALTER TABLE users ADD COLUMN occupation TEXT`,
             `ALTER TABLE users ADD COLUMN dob DATE`,
             `CREATE TABLE IF NOT EXISTS service_usage_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,6 +157,8 @@ const migrateDatabase = (db) => {
         let done = 0;
         const runNext = () => {
             if (done >= migrations.length) {
+                // Deduplicate services: keep lowest service_id per name
+                db.db.run(`DELETE FROM services WHERE service_id NOT IN (SELECT MIN(service_id) FROM services GROUP BY service_name)`, () => {});
                 console.log('✓ Database migrations checked');
                 resolve();
                 return;
